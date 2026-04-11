@@ -1,0 +1,149 @@
+"""JSON config loading for DysonianLineCNN.
+
+Single source of truth for paths, dataset generator inputs, CNN training
+hyperparameters, and inference targets. See `config/README.md` for what
+each field means.
+
+All loaders accept `config_dir` as a `str` or `pathlib.Path` and return
+plain dicts (training.py and friends work with dict access, not attribute
+access, to stay serialization-friendly).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import platform
+from pathlib import Path
+from typing import Any
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Config file not found: {path}\n"
+            f"Hint: if this is paths.json, copy config/paths.example.json "
+            f"to config/paths.json and edit drive_root_mac for your machine."
+        )
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _strip_docs(cfg: Any) -> Any:
+    """Recursively remove `_doc` fields from a config dict for clean consumption."""
+    if isinstance(cfg, dict):
+        return {k: _strip_docs(v) for k, v in cfg.items() if k != "_doc"}
+    if isinstance(cfg, list):
+        return [_strip_docs(v) for v in cfg]
+    return cfg
+
+
+def _detect_platform() -> str:
+    """Return `"colab"` if running inside Google Colab, `"mac"` otherwise.
+
+    Colab detection is based on the `/content` directory, which is guaranteed
+    to exist in every Colab runtime and nowhere else by convention.
+    """
+    if os.path.isdir("/content"):
+        return "colab"
+    if platform.system() == "Darwin":
+        return "mac"
+    # Fall back to mac for anything non-Colab; the user can still override
+    # manually via paths.json by editing drive_root_mac.
+    return "mac"
+
+
+def load_paths(config_dir: str | Path) -> dict[str, Any]:
+    """Load `paths.json` and resolve platform-specific roots.
+
+    Returns a dict with the following resolved absolute paths on top of the
+    raw fields from paths.json:
+
+        drive_root:  the active drive root for this runtime (mac or colab)
+        project_dir: drive_root / project_subdir
+        runs_dir:    project_dir / runs_subdir
+        data_dir:    project_dir / data_subdir
+    """
+    config_dir = Path(config_dir)
+    raw = _strip_docs(_read_json(config_dir / "paths.json"))
+
+    runtime = _detect_platform()
+    if runtime == "colab":
+        drive_root = raw["drive_root_colab"]
+    else:
+        drive_root = raw["drive_root_mac"]
+
+    project_dir = Path(drive_root) / raw["project_subdir"]
+    runs_dir = project_dir / raw["runs_subdir"]
+    data_dir = project_dir / raw["data_subdir"]
+
+    return {
+        **raw,
+        "runtime": runtime,
+        "drive_root": str(Path(drive_root)),
+        "project_dir": str(project_dir),
+        "runs_dir": str(runs_dir),
+        "data_dir": str(data_dir),
+    }
+
+
+def load_dataset_cfg(config_dir: str | Path) -> dict[str, Any]:
+    """Load `dataset.json` (MATLAB generator inputs). No profile logic."""
+    return _strip_docs(_read_json(Path(config_dir) / "dataset.json"))
+
+
+def load_training_cfg(
+    config_dir: str | Path,
+    profile: str | None = None,
+) -> dict[str, Any]:
+    """Load `training.json` and resolve a profile.
+
+    Profile resolution order (highest priority first):
+        1. explicit `profile` argument
+        2. DYSON_PROFILE environment variable
+        3. `active_profile` field in the JSON file
+
+    Returns a flat dict with the resolved profile's fields plus a synthetic
+    `profile_name` field identifying which profile was chosen.
+    """
+    raw = _strip_docs(_read_json(Path(config_dir) / "training.json"))
+
+    resolved = profile or os.environ.get("DYSON_PROFILE") or raw.get("active_profile")
+    if resolved is None:
+        raise ValueError(
+            "No profile specified: pass `profile=...`, set DYSON_PROFILE, or "
+            "add `active_profile` to training.json."
+        )
+
+    profiles = raw.get("profiles", {})
+    if resolved not in profiles:
+        available = sorted(profiles.keys())
+        raise ValueError(
+            f"Profile '{resolved}' not found in training.json. "
+            f"Available: {available}"
+        )
+
+    cfg = dict(profiles[resolved])
+    cfg["profile_name"] = resolved
+    return cfg
+
+
+def load_inference_cfg(config_dir: str | Path) -> dict[str, Any]:
+    """Load `inference.json`."""
+    return _strip_docs(_read_json(Path(config_dir) / "inference.json"))
+
+
+def load_all(
+    config_dir: str | Path,
+    profile: str | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Convenience: load all four configs in one call.
+
+    Returns (paths, dataset_cfg, training_cfg, inference_cfg).
+    """
+    return (
+        load_paths(config_dir),
+        load_dataset_cfg(config_dir),
+        load_training_cfg(config_dir, profile=profile),
+        load_inference_cfg(config_dir),
+    )
