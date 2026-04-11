@@ -133,6 +133,54 @@ def test_missing_paths_json_raises_clear_error(tmp_path):
         load_paths(cfg)
 
 
+def test_colab_falls_back_to_paths_example_when_paths_json_absent(
+    tmp_path, monkeypatch
+):
+    """On Colab, paths.json is optional — load_paths should fall back to
+    paths.example.json (drive_root_colab is universal across users)."""
+    cfg = tmp_path / "config"
+    cfg.mkdir()
+    # Write a minimal paths.example.json (no paths.json)
+    (cfg / "paths.example.json").write_text(
+        '{"drive_root_mac": "/Users/<u>/Library/CloudStorage/GoogleDrive-<e>/My Drive",'
+        ' "drive_root_colab": "/content/drive/MyDrive",'
+        ' "project_subdir": "Python/DysonianLineCNN",'
+        ' "runs_subdir": "runs",'
+        ' "data_subdir": "data"}'
+    )
+
+    # Force runtime detection to "colab" by monkey-patching the helper
+    import dyson_cnn.config as cfg_mod
+
+    monkeypatch.setattr(cfg_mod, "_detect_platform", lambda: "colab")
+
+    paths = load_paths(cfg)
+    assert paths["runtime"] == "colab"
+    assert paths["drive_root"] == "/content/drive/MyDrive"
+    assert paths["project_dir"] == "/content/drive/MyDrive/Python/DysonianLineCNN"
+
+
+def test_mac_does_not_fall_back_to_example_even_if_present(tmp_path, monkeypatch):
+    """On Mac, paths.json is required (drive_root_mac is user-specific).
+    The fallback must NOT trigger even when paths.example.json exists."""
+    cfg = tmp_path / "config"
+    cfg.mkdir()
+    (cfg / "paths.example.json").write_text(
+        '{"drive_root_mac": "/Users/<u>/Library/CloudStorage/GoogleDrive-<e>/My Drive",'
+        ' "drive_root_colab": "/content/drive/MyDrive",'
+        ' "project_subdir": "Python/DysonianLineCNN",'
+        ' "runs_subdir": "runs",'
+        ' "data_subdir": "data"}'
+    )
+
+    import dyson_cnn.config as cfg_mod
+
+    monkeypatch.setattr(cfg_mod, "_detect_platform", lambda: "mac")
+
+    with pytest.raises(FileNotFoundError, match="paths.example"):
+        load_paths(cfg)
+
+
 def test_doc_fields_are_stripped(config_dir):
     """Fields starting with underscore are human-readable docs and must
     be stripped from the returned dict so downstream code never sees them."""

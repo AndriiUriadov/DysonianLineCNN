@@ -63,11 +63,30 @@ def load_paths(config_dir: str | Path) -> dict[str, Any]:
         project_dir: drive_root / project_subdir
         runs_dir:    project_dir / runs_subdir
         data_dir:    project_dir / data_subdir
+
+    On Colab, `paths.json` is optional: if absent, the function falls back to
+    the committed `paths.example.json`. This works because `drive_root_colab`
+    is universal across users (`/content/drive/MyDrive`), so the example file
+    is sufficient and no per-user editing is needed in Colab.
+
+    On Mac (or any non-Colab runtime), `paths.json` is required because
+    `drive_root_mac` is user-specific (depends on the Google Drive for
+    Desktop mount path, which embeds the user's email).
     """
     config_dir = Path(config_dir)
-    raw = _strip_docs(_read_json(config_dir / "paths.json"))
-
+    paths_file = config_dir / "paths.json"
+    example_file = config_dir / "paths.example.json"
     runtime = _detect_platform()
+
+    if paths_file.exists():
+        raw = _strip_docs(_read_json(paths_file))
+    elif runtime == "colab" and example_file.exists():
+        # Colab fallback: drive_root_colab is universal, no per-user override needed.
+        raw = _strip_docs(_read_json(example_file))
+    else:
+        # Re-read to surface the standard "missing paths.json" error message.
+        raw = _strip_docs(_read_json(paths_file))
+
     if runtime == "colab":
         drive_root = raw["drive_root_colab"]
     else:
