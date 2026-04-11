@@ -111,9 +111,14 @@ if max(B) > 2000 && max(B_real) < 2000
     B_real = 10 * B_real;
 end
 
-%% 4) --- Interpolate experimental spectrum onto CNN B-axis --- 
-% yExp now has the same length as B and is free from raw-byte artifacts
-yExp = interp1(B_real, spc_real, B, 'linear', 'extrap');
+%% 4) --- Interpolate experimental spectrum onto CNN B-axis ---
+% yExp now has the same length as B and is free from raw-byte artifacts.
+% Zero-fill outside the Bruker sweep window rather than linearly
+% extrapolating — a narrow ~200 G sweep extended over 4500 G of CNN axis
+% via linear extrapolation generates ±10^6 scale tails that dominate the
+% least-squares a*sim + b fit below and produce a completely flat red
+% reconstructed curve (see PrepareOneSpectrumForCNN.m for the same fix).
+yExp = interp1(B_real, spc_real, B, 'linear', 0);
 
 % Remove DC offset (stabilizes a*sim + b scaling)
 yExp = yExp - median(yExp);
