@@ -72,6 +72,59 @@ pytest tests/ -v
 40 tests cover config loading, normalization invariants, channel order,
 model architecture, and inference. All should pass in a few seconds.
 
+### Colab setup
+
+The training notebooks ([notebooks/01_train_and_eval.ipynb](notebooks/01_train_and_eval.ipynb)
+and [notebooks/02_infer_real.ipynb](notebooks/02_infer_real.ipynb)) are
+thin wrappers around `dyson_cnn/*` and run on both Google Colab and local
+Mac. On a fresh Colab runtime, the first code cell does:
+
+1. Reads an SSH deploy key from Colab Secrets.
+2. Writes it to `~/.ssh/id_ed25519`, `chmod 600`, trusts `github.com`.
+3. `git clone git@github.com:AndriiUriadov/DysonianLineCNN.git` into `/content`.
+4. `pip install -e ".[dev]"` editable install.
+5. `drive.mount('/content/drive')`.
+
+**One-time Colab setup** (per Colab account):
+
+1. On your Mac, generate a dedicated SSH keypair for Colab (do not reuse
+   your personal key):
+
+   ```bash
+   ssh-keygen -t ed25519 -f /tmp/colab_deploy_key -N "" -C "colab-deploy"
+   ```
+
+2. Add the **public** key (`/tmp/colab_deploy_key.pub`) to the GitHub repo
+   as a **read-only** deploy key:
+
+   ```text
+   GitHub → DysonianLineCNN → Settings → Deploy keys → Add deploy key
+   Title: Colab (read-only)
+   Key: <paste contents of /tmp/colab_deploy_key.pub>
+   Allow write access: UNCHECKED
+   ```
+
+3. Copy the **private** key contents into Colab Secrets:
+
+   ```text
+   Colab → any notebook → Secrets (key icon in left sidebar) → New secret
+   Name: GITHUB_DEPLOY_KEY
+   Value: <paste contents of /tmp/colab_deploy_key — the whole file>
+   Notebook access: enabled
+   ```
+
+4. Delete the local copy so it never ends up in git or Drive:
+
+   ```bash
+   rm /tmp/colab_deploy_key /tmp/colab_deploy_key.pub
+   ```
+
+Read-only is important: it means even accidental `git push` from a Colab
+notebook fails with a clear error, so writes stay local to your Mac.
+
+After the first successful `git pull` in Colab, the notebooks are cached
+in `/content/DysonianLineCNN` for the session.
+
 ### Further reading
 
 - [config/README.md](config/README.md) — every tunable parameter documented
