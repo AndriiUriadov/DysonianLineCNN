@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dyson_cnn"
+version = "0.1.0"
+description = "1D CNN for Dysonian EPR line parameter regression (B0, dB, p3) from first-derivative spectra."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "A.V. Uriadov"},
+    {name = "D.V. Savchenko"},
+]
+keywords = ["EPR", "Dysonian", "CNN", "spectroscopy", "deep-learning"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "tensorflow>=2.20",
+    "numpy>=2.0",
+    "scipy>=1.15",
+    "scikit-learn>=1.7",
+    "pandas>=2.2",
+    "matplotlib>=3.10",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "nbstripout>=0.9",
+    "nbformat>=5.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/uriadov/DysonianLineCNN"
+Documentation = "https://github.com/uriadov/DysonianLineCNN/blob/main/Documentation/"
+
+[tool.setuptools.packages.find]
+include = ["dyson_cnn*"]
+exclude = ["tests*", "matlab*", "notebooks*", "config*", "data*", "Documentation*", "bin*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+]
