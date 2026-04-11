@@ -58,9 +58,17 @@ Contents of a typical `colab_full` run (`N=10000`, `Npoints=4096`):
 | `history.csv` | 35 KB | Per-epoch training and validation metrics (one row per epoch) for custom plots |
 | `loss.png` | 40 KB | Training / validation loss curve |
 | `loss_full_and_zoom.png` | 100 KB | Same curve plus a zoomed tail region for inspecting late-epoch convergence |
-| `parity_test.png` | 150 KB | Three-panel true-vs-predicted scatter (`B0`, `dB`, `p3`) on the test set, with a `y=x` diagonal |
+| `parity_test.{png,pdf}` | 260 KB / 200 KB | Combined 3-panel true-vs-predicted scatter (`B0`, `dB`, `p3`) on the test set, density-colored, with `R²` and MAE in each subplot title |
+| `parity_B0.{png,pdf}` | 120 KB / 40 KB | Full-size B0 parity for article figures with residual histogram inset |
+| `parity_dB.{png,pdf}` | 110 KB / 40 KB | Full-size dB parity, same format |
+| `parity_p3.{png,pdf}` | 130 KB / 45 KB | Full-size p3 parity, same format |
+| `residuals_test.{png,pdf}` | 70 KB / 20 KB | Combined 3-panel residual histograms (`y_pred − y_true`) with μ and σ annotated |
 | `dysonian_test_predictions.csv` | 110 KB | Per-sample `(B0, dB, p3)` true and predicted values in physical units for ad-hoc analysis |
 | `_X_test.npy` / `_y_test.npy` | 23 MB / 18 KB | Cached test split so `evaluate_run` can be replayed in a separate Jupyter session without re-splitting the dataset |
+
+All parity and residual figures are saved in both PNG (for quick
+preview) and PDF (for vector embedding in LaTeX article figures).
+Pass `formats=["png", "pdf", "svg"]` to `evaluate_run` to add SVG too.
 
 The leading underscore on `_X_test.npy` / `_y_test.npy` marks them as
 internal implementation files — they let you call `evaluate_run(run_dir)`
