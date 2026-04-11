@@ -22,28 +22,46 @@
 
 clear; clc;
 
-%% -------- Settings --------
-runName  = '20260125_140421'; % <- % folder inside ./runs/
-baseName = '1';          % <- experimental spectrum ID (DTA)
-dBThrDefault = 1000;          % fallback threshold if meta is missing
+%% -------- Load config --------
+% runName / baseName / dB_thr_G come from config/*.json so MATLAB and
+% Python read a single source of truth.
+thisDir   = fileparts(mfilename('fullpath'));
+repoRoot  = fileparts(thisDir);
+addpath(thisDir);  % ensure load_config is discoverable
 
-%% -------- Paths relative to this script --------
-thisDir    = fileparts(mfilename('fullpath'));
-projectDir = thisDir; % if the script is located in the project root;
-                      % otherwise: projectDir = fileparts(thisDir);
+cfgPaths = load_config('paths');
+cfgInf   = load_config('inference');
+cfgDS    = load_config('dataset');
 
-dataDir = fullfile(projectDir, 'data');
-runDir  = fullfile(projectDir, 'runs', runName);
+runName  = char(cfgInf.runName);
+baseName = char(cfgInf.spectrum_basename);
+if strcmp(runName, 'TO_BE_SET_AFTER_FIRST_TRAINING')
+    error('Validator:RunNotSet', ...
+          'config/inference.json runName is still the placeholder. Train a model and update runName.');
+end
+dBThrDefault = double(cfgDS.dB_thr_G);  % authoritative narrow/wide threshold
+
+%% -------- Resolve paths --------
+% Convention in the new architecture:
+%   - raw Bruker .DTA/.DSC live in the LOCAL repo data/ (script-relative)
+%   - trained runs live on Drive under <project>/<runs_subdir>/<runName>/
+%   - predicted params JSON lives in the Drive project folder top level,
+%     next to the input <baseName>_spectrum.csv (produced by
+%     dyson_cnn.infer.predict_real_spectrum on Colab or Mac)
+%   - the fit overlay PNG is written to the Drive project folder
+driveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
+runDir          = fullfile(driveProjectDir, char(cfgPaths.runs_subdir), runName);
+dataDir         = fullfile(repoRoot, 'data');
 
 dtaFile  = fullfile(dataDir, [baseName '.DTA']);
 
-predJson = fullfile(thisDir, strcat(baseName, '_real_predicted_params.json'));
+predJson = fullfile(driveProjectDir, strcat(baseName, '_real_predicted_params.json'));
 metaJson = fullfile(runDir, 'model_meta.json');
 
 bCsv = fullfile(runDir, 'B_axis.csv');
 bNpy = fullfile(runDir, 'B_axis.npy');
 
-outPng = fullfile(projectDir, [baseName '_cnn_fit.png']);
+outPng = fullfile(driveProjectDir, [baseName '_cnn_fit.png']);
 
 %% --- Sanity checks ---
 if ~isfile(dtaFile);  error('DTA not found: %s', dtaFile); end
@@ -118,11 +136,27 @@ else
     error('JSON must contain y_pred_physical.{B0,dB,p3}');
 end
 
-%% 7) --- Read dB threshold from model_meta.json --- 
-M = jsondecode(fileread(metaJson));
+%% 7) --- dB threshold from config/dataset.json ---
+% dBThrDefault was loaded at the top from cfgDS.dB_thr_G, which is the
+% single source of truth. We still cross-check against model_meta.json's
+% embedded generator_meta so a mismatched run directory (e.g. dataset
+% regenerated with a different threshold after training) is flagged.
 dBThr = dBThrDefault;
-if isfield(M, 'generator_meta') && isfield(M.generator_meta, 'dB_thr_G')
-    dBThr = M.generator_meta.dB_thr_G;
+if isfile(metaJson)
+    try
+        M = jsondecode(fileread(metaJson));
+        if isfield(M, 'generator_meta') && isfield(M.generator_meta, 'dB_thr_G')
+            metaThr = double(M.generator_meta.dB_thr_G);
+            if abs(metaThr - dBThrDefault) > 1e-9
+                warning('Validator:ThresholdMismatch', ...
+                        ['model_meta.json dB_thr_G=%.6g differs from ' ...
+                         'config/dataset.json dB_thr_G=%.6g. Using config value.'], ...
+                        metaThr, dBThrDefault);
+            end
+        end
+    catch ME
+        warning('Validator:MetaReadFailed', 'Could not read %s: %s', metaJson, ME.message);
+    end
 end
 
 %% 8) --- Reconstruct spectrum using DysonGeneratorMix logic (narrow/wide)

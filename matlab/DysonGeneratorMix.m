@@ -47,9 +47,18 @@
 %
 % -------------------------------------------------------------------------
 
+%% --------------------- Load config ---------------------
+% All tunable defaults come from config/dataset.json so that MATLAB and
+% Python share a single source of truth. The script is still callable
+% with name/value overrides via inputParser for quick experiments.
+thisFileDir = fileparts(mfilename('fullpath'));
+addpath(thisFileDir);  % ensure load_config is discoverable
+cfgDS    = load_config('dataset');
+cfgPaths = load_config('paths');
+
 %% --------------------- Debug settings ---------------------
-DoVisualCheck = true;   % show random spectra for visual sanity check
-Nvisual       = 10;     % number of spectra to plot
+DoVisualCheck = logical(cfgDS.DoVisualCheck);  % show random spectra for visual sanity check
+Nvisual       = double(cfgDS.Nvisual);         % number of spectra to plot
 
 %% --------------------- Parse inputs ---------------------
 % Parsing controls parameters data type 
@@ -62,76 +71,80 @@ p.FunctionName = mfilename;
 
 % --------------------- Core dataset parameters ---------------------
 
-addParameter(p,'N',         10000,        @(x)isnumeric(x)&&isscalar(x)&&x>0); 
+% All defaults below come from config/dataset.json via cfgDS. Hardcoded
+% fallbacks removed — change them in dataset.json, not here.
+
+addParameter(p,'N',         double(cfgDS.N),          @(x)isnumeric(x)&&isscalar(x)&&x>0);
 % Total number of synthetic spectra to generate.
 
-addParameter(p,'B0Range',   [3400 4500], @(x)isnumeric(x)&&numel(x)==2&&x(1)<x(2));  % 3600 4200
+addParameter(p,'B0Range',   double(cfgDS.B0Range_G(:)'), @(x)isnumeric(x)&&numel(x)==2&&x(1)<x(2));
 % Range of resonance magnetic field B0 (in Gauss).
- 
-addParameter(p,'dBRange',   [250 350],    @(x)isnumeric(x)&&numel(x)==2&&x(1)<x(2)); % 700 900
+
+addParameter(p,'dBRange',   double(cfgDS.dBRange_G(:)'), @(x)isnumeric(x)&&numel(x)==2&&x(1)<x(2));
 % Range of peak-to-peak linewidth dB (ΔB_pp) in Gauss.
 
-addParameter(p,'pRange',    [1.3 1.5],   @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2)); % 0.5 2.5
+addParameter(p,'pRange',    double(cfgDS.pRange(:)'),  @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2));
 % Range of asymmetry parameter:
 %   - narrow mode: physical Dyson parameter p
 %   - wide mode: effective asymmetry parameter alpha
 
-addParameter(p,'BWindow',   [0 5000],    @(x)isnumeric(x)&&numel(x)==2&&x(1)<x(2));  % 0 7000 
+addParameter(p,'BWindow',   double(cfgDS.BWindow_G(:)'), @(x)isnumeric(x)&&numel(x)==2&&x(1)<x(2));
 % Magnetic field window [Bmin, Bmax] used for the visible spectrum (in Gauss).
 
-addParameter(p,'Npoints',   4096,        @(x)isnumeric(x)&&isscalar(x)&&x>=128); 
+addParameter(p,'Npoints',   double(cfgDS.Npoints),    @(x)isnumeric(x)&&isscalar(x)&&x>=128);
 % Number of points in the magnetic field axis (visible part, B > 0).
 
-addParameter(p,'dBThr',     1000,        @(x)isnumeric(x)&&isscalar(x)&&x>0); 
+addParameter(p,'dBThr',     double(cfgDS.dB_thr_G),   @(x)isnumeric(x)&&isscalar(x)&&x>0);
 % Threshold linewidth (in Gauss) separating narrow and wide Dyson regimes.
 
-addParameter(p,'OutDir',    '',          @(x)ischar(x)||isstring(x)); 
+addParameter(p,'OutDir',    '',                       @(x)ischar(x)||isstring(x));
 % Output directory for generated files.
-% If empty, data are saved in the directory of the script.
+% If empty, resolved from config/paths.json:
+%   fullfile(drive_root_mac, project_subdir).
 
-addParameter(p,'Prefix',    'dataset',    @(x)ischar(x)||isstring(x)); 
+addParameter(p,'Prefix',    char(cfgDS.Prefix),       @(x)ischar(x)||isstring(x));
 % Filename prefix for all generated output files.
 
-addParameter(p,'Seed',      1,           @(x)isnumeric(x)&&isscalar(x)); 
+addParameter(p,'Seed',      double(cfgDS.Seed),       @(x)isnumeric(x)&&isscalar(x));
 % Random number generator seed (for reproducibility).
 
-addParameter(p,'DoAugment', true,        @(x)islogical(x)&&isscalar(x)); 
+addParameter(p,'DoAugment', logical(cfgDS.DoAugment), @(x)islogical(x)&&isscalar(x));
 % Enable or disable spectral augmentations (noise, baseline, distortions).
 
 % --------------------- Augmentation parameters ---------------------
 
-addParameter(p,'SNRdBRange',         [40 60], @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2)); 
+addParameter(p,'SNRdBRange',         double(cfgDS.SNRdBRange(:)'), @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2));
 % Signal-to-noise ratio range (in dB) used for additive Gaussian noise.
 
-addParameter(p,'BaselineOffsetRange',[-0.01 0.01], @(x)isnumeric(x)&&numel(x)==2); 
+addParameter(p,'BaselineOffsetRange',double(cfgDS.BaselineOffsetRange(:)'), @(x)isnumeric(x)&&numel(x)==2);
 % Constant baseline offset added to the spectrum (relative units).
 
-addParameter(p,'BaselineSlopeRange', [-0.02 0.02], @(x)isnumeric(x)&&numel(x)==2); 
+addParameter(p,'BaselineSlopeRange', double(cfgDS.BaselineSlopeRange(:)'),  @(x)isnumeric(x)&&numel(x)==2);
 % Linear baseline slope range across the magnetic field window.
 
-addParameter(p,'BaselineQuadRange',  [-0.01 0.01], @(x)isnumeric(x)&&numel(x)==2); 
+addParameter(p,'BaselineQuadRange',  double(cfgDS.BaselineQuadRange(:)'),   @(x)isnumeric(x)&&numel(x)==2);
 % Quadratic baseline curvature range (second-order field dependence).
 
-addParameter(p,'BScaleRange',        [0.998 1.002], @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2)); 
+addParameter(p,'BScaleRange',        double(cfgDS.BScaleRange(:)'),         @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2));
 % Global magnetic field scaling factor (simulates calibration errors).
 
-addParameter(p,'BOffsetRange',       [-5 5], @(x)isnumeric(x)&&numel(x)==2); 
+addParameter(p,'BOffsetRange',       double(cfgDS.BOffsetRange_G(:)'),      @(x)isnumeric(x)&&numel(x)==2);
 % Global magnetic field offset (in Gauss).
 
-addParameter(p,'SpikeProb',          0.0, @(x)isnumeric(x)&&isscalar(x)&&x>=0&&x<=1); 
+addParameter(p,'SpikeProb',          double(cfgDS.SpikeProb),               @(x)isnumeric(x)&&isscalar(x)&&x>=0&&x<=1);
 % Probability that a spectrum contains a spike artifact.
 
-addParameter(p,'SpikeCountRange',    [1 2], @(x)isnumeric(x)&&numel(x)==2); 
+addParameter(p,'SpikeCountRange',    double(cfgDS.SpikeCountRange(:)'),     @(x)isnumeric(x)&&numel(x)==2);
 % Range of the number of spike artifacts per spectrum.
 
-addParameter(p,'SpikeAmpRange',      [0.01 0.05], @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2)); 
+addParameter(p,'SpikeAmpRange',      double(cfgDS.SpikeAmpRange(:)'),       @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2));
 % Relative amplitude range of spike artifacts (fraction of signal scale).
 
-addParameter(p,'ModSmoothProb',      0.05, @(x)isnumeric(x)&&isscalar(x)&&x>=0&&x<=1); 
+addParameter(p,'ModSmoothProb',      double(cfgDS.ModSmoothProb),           @(x)isnumeric(x)&&isscalar(x)&&x>=0&&x<=1);
 % Probability of applying modulation-induced smoothing
 % (simulates lock-in detection effects).
 
-addParameter(p,'ModSmoothSigmaPts',  [0.6 2.5], @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2)); 
+addParameter(p,'ModSmoothSigmaPts',  double(cfgDS.ModSmoothSigmaPts(:)'),   @(x)isnumeric(x)&&numel(x)==2&&x(1)<=x(2));
 % Gaussian smoothing width (sigma) in units of data points.
 
 parse(p);
@@ -182,13 +195,21 @@ y = zeros(N, 3, 'single');
 
 %% --------------------- Output paths ---------------------
 % Output directory handling:
-% If outDir is not specified or invalid, save next to this script
-ThisFolder = fileparts(mfilename('fullpath'));
+% If OutDir is empty (the default), resolve from config/paths.json to the
+% Drive project folder: fullfile(drive_root_mac, project_subdir). If OutDir
+% is explicitly provided but does not exist, fall back to the Drive folder
+% rather than writing next to the script (where files would clutter the git
+% repo working tree).
+DriveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
 if isempty(outDir)
-   outDir = ThisFolder;
+    outDir = DriveProjectDir;
 elseif ~exist(outDir,'dir')
-   warning('outDir does not exist. Saving next to the script instead.');
-   outDir = ThisFolder;
+    warning('outDir does not exist: %s\nSaving to Drive project folder: %s', ...
+            outDir, DriveProjectDir);
+    outDir = DriveProjectDir;
+end
+if ~exist(outDir,'dir')
+    mkdir(outDir);
 end
 
 %% --------------------- Main loop ---------------------

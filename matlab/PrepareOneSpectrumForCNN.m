@@ -21,36 +21,48 @@
 
 clear; clc; close all;
 
-%% === 0) PROJECT ROOT ===
-scriptPath  = fileparts(mfilename('fullpath'));
-projectRoot = scriptPath;
-fprintf("[INFO] Project root: %s\n", projectRoot);
+%% === 0) LOAD CONFIG ===
+% All tunable settings come from config/*.json via load_config. The raw
+% Bruker .DTA/.DSC files live in the local repo's data/ folder (script-
+% relative, not on Drive, because raw experimental data stays with the
+% code). Everything produced by this script is written to the Drive-
+% mounted project folder so Colab and Python can read it.
+scriptDir = fileparts(mfilename('fullpath'));
+repoRoot  = fileparts(scriptDir);
+addpath(scriptDir);  % ensure load_config is discoverable
 
-%% === 1) USER SETTINGS ===
-% 1.1) Manual selection of run (model)
-                                % <<<<<<<<<<<<<<<<<<<<<<<<<<
-runName = "20260125_140421";    % <<< SPECIFY MODEL RUN
-                                % <<<<<<<<<<<<<<<<<<<<<<<<<<
-                            
-runDir  = fullfile(projectRoot, "runs", runName);
+cfgPaths = load_config('paths');
+cfgInf   = load_config('inference');
+
+driveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
+fprintf("[INFO] Repo root        : %s\n", repoRoot);
+fprintf("[INFO] Drive project dir: %s\n", driveProjectDir);
+
+%% === 1) RESOLVE INPUTS FROM CONFIG ===
+runName = string(cfgInf.runName);
+if runName == "TO_BE_SET_AFTER_FIRST_TRAINING"
+    error("PrepareOneSpectrumForCNN:RunNotSet", ...
+          "config/inference.json runName is still the placeholder. Train a model and update runName.");
+end
+
+runDir = fullfile(driveProjectDir, char(cfgPaths.runs_subdir), char(runName));
 assert(isfolder(runDir), "[WARN] Run directory not found: %s", runDir);
 
-% Base name (without .DTA/.DSC)
-                                % <<<<<<<<<<<<<<<<<<<<<<<<<<
-realBaseName = "1";             % <<< SPECIFY .DTA BASE NAME
-                                % <<<<<<<<<<<<<<<<<<<<<<<<<<
+realBaseName = string(cfgInf.spectrum_basename);
+fprintf("[INFO] runName          : %s\n", runName);
+fprintf("[INFO] spectrum_basename: %s\n", realBaseName);
 
-% 1.2) B_axis.csv (from selected run)
+% 1.2) B_axis.csv (from selected run on Drive)
 BaxisFile = fullfile(runDir, "B_axis.csv");
 assert(isfile(BaxisFile), "[WARN] B_axis.csv not found in run: %s", BaxisFile);
 
-% 1.3) Real spectrum in the data folder (base name without extension)
-dataDir = fullfile(projectRoot, "data");
+% 1.3) Real spectrum in the LOCAL repo data/ folder (script-relative)
+dataDir = fullfile(repoRoot, "data");
 assert(isfolder(dataDir), "[WARN] Data folder not found: %s", dataDir);
 
-% 1.4) Output files in project root
-outCsv = fullfile(projectRoot, strcat(realBaseName, '_spectrum.csv'));
-outPng = fullfile(projectRoot, strcat(realBaseName, '_spectrum_preview.png'));
+% 1.4) Output files in the Drive project folder (consumed by Colab)
+outCsv = fullfile(driveProjectDir, strcat(char(realBaseName), '_spectrum.csv'));
+outPng = fullfile(driveProjectDir, strcat(char(realBaseName), '_spectrum_preview.png'));
 % 
 
 %% === 2) LOAD B_axis (CNN axis) ===
