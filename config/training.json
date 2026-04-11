@@ -1,0 +1,58 @@
+{
+  "_doc": "CNN training hyperparameters. Select a profile via the 'active_profile' field or the DYSON_PROFILE environment variable (env var takes precedence). Profiles are fully self-contained — no merging of defaults.",
+
+  "active_profile": "colab_full",
+
+  "profiles": {
+    "colab_full": {
+      "_doc": "Full training on NVIDIA GPU in Google Colab. Used for final runs that produce figures for the article.",
+      "epochs": 300,
+      "batch_size": 64,
+      "dropout": 0.15,
+      "learning_rate": 1e-3,
+      "clipnorm": 1.0,
+      "mixed_precision": true,
+      "loss_weights": {"B0": 1.0, "dB": 1.0, "p3": 2.0},
+      "early_stopping_patience": 40,
+      "reduce_lr_patience": 10,
+      "reduce_lr_factor": 0.5,
+      "reduce_lr_min": 1e-6,
+      "max_samples": null,
+      "random_seed": 42
+    },
+
+    "mac_full": {
+      "_doc": "Full training locally on Apple Silicon Mac via tensorflow-metal. No mixed precision (Metal does not support float16 reliably). Slower than Colab but usable when Colab is unavailable.",
+      "epochs": 300,
+      "batch_size": 32,
+      "dropout": 0.15,
+      "learning_rate": 1e-3,
+      "clipnorm": 1.0,
+      "mixed_precision": false,
+      "loss_weights": {"B0": 1.0, "dB": 1.0, "p3": 2.0},
+      "early_stopping_patience": 40,
+      "reduce_lr_patience": 10,
+      "reduce_lr_factor": 0.5,
+      "reduce_lr_min": 1e-6,
+      "max_samples": null,
+      "random_seed": 42
+    },
+
+    "mac_dev": {
+      "_doc": "Fast dev iterations on Mac. Slices the full dataset to 500 samples and runs 10 epochs. Intended for debugging pipeline plumbing, not for producing meaningful metrics.",
+      "epochs": 10,
+      "batch_size": 16,
+      "dropout": 0.15,
+      "learning_rate": 1e-3,
+      "clipnorm": 1.0,
+      "mixed_precision": false,
+      "loss_weights": {"B0": 1.0, "dB": 1.0, "p3": 2.0},
+      "early_stopping_patience": 5,
+      "reduce_lr_patience": 3,
+      "reduce_lr_factor": 0.5,
+      "reduce_lr_min": 1e-6,
+      "max_samples": 500,
+      "random_seed": 42
+    }
+  }
+}

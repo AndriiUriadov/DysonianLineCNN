@@ -1,0 +1,10 @@
+{
+  "_doc": "Template for paths.json. Copy this file to config/paths.json and edit the fields marked with <angle brackets> for your machine. config/paths.json is gitignored because paths are user-specific.",
+
+  "drive_root_mac": "/Users/<username>/Library/CloudStorage/GoogleDrive-<email>/My Drive",
+  "drive_root_colab": "/content/drive/MyDrive",
+
+  "project_subdir": "Python/DysonianLineCNN",
+  "runs_subdir": "runs",
+  "data_subdir": "data"
+}
