@@ -40,11 +40,11 @@ Desktop on Mac or `google.colab.drive.mount` in Colab.
 
 ## Getting started
 
-### First-time setup
+### First-time setup on macOS
 
 ```bash
 # 1) Clone and enter the repo
-git clone git@github.com:uriadov/DysonianLineCNN.git
+git clone git@github.com:AndriiUriadov/DysonianLineCNN.git
 cd DysonianLineCNN
 
 # 2) Create a virtualenv and install the package in editable mode
@@ -52,9 +52,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-# 3) Copy the paths template and edit for your machine
+# 3) Copy the paths template and edit drive_root_mac for your machine
 cp config/paths.example.json config/paths.json
-$EDITOR config/paths.json  # set drive_root_mac to your Google Drive mount
+$EDITOR config/paths.json
+# Set drive_root_mac to your Google Drive for Desktop mount, e.g.
+# /Users/<username>/Library/CloudStorage/GoogleDrive-<email>/My Drive
+# (or "Мій диск" if your Drive is localized)
 
 # 4) Install the nbstripout git filter (one-time, per clone)
 nbstripout --install --attributes .gitattributes
@@ -63,13 +66,18 @@ nbstripout --install --attributes .gitattributes
 The `[dev]` extra pulls in `pytest` and `nbstripout`. See
 [pyproject.toml](pyproject.toml) for the full dependency list.
 
+On Colab there is no first-time setup beyond adding the `GITHUB_DEPLOY_KEY`
+secret (see the next section). The notebooks bootstrap themselves and
+`load_paths` automatically falls back to `paths.example.json` because
+`drive_root_colab` is universal across users.
+
 ### Running tests
 
 ```bash
 pytest tests/ -v
 ```
 
-40 tests cover config loading, normalization invariants, channel order,
+42 tests cover config loading, normalization invariants, channel order,
 model architecture, and inference. All should pass in a few seconds.
 
 ### Colab setup
