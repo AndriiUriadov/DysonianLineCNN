@@ -24,6 +24,14 @@ bin/
 # --- User-specific config (absolute paths, personal) ---
 config/paths.json
 
+# --- Internal dev docs (not part of the published article) ---
+# redacted.md is meta-context for redacted Code sessions, MigrationPlan.md is
+# the historical refactor plan. Both stay on disk locally for ongoing work
+# but are not part of the public code drop. They will be filter-branched
+# out of git history as part of the pre-public audit.
+redacted.md
+MigrationPlan.md
+
 # --- Python ---
 __pycache__/
 *.py[cod]

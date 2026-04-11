@@ -128,5 +128,4 @@ in `/content/DysonianLineCNN` for the session.
 ### Further reading
 
 - [config/README.md](config/README.md) — every tunable parameter documented
-- [MigrationPlan.md](MigrationPlan.md) — the full migration design
-- [redacted.md](redacted.md) — context and critical invariants
+- [Documentation/](Documentation/) — thesis PDFs, BibTeX, architecture diagram
