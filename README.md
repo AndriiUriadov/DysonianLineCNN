@@ -38,6 +38,47 @@ Data (`.npy`, `.DTA`, `.DSC`) and training artifacts (`runs/`) are **not**
 stored in git — they live on Google Drive and are accessed via Drive for
 Desktop on Mac or `google.colab.drive.mount` in Colab.
 
+## Run directory contents
+
+Each training run (`notebooks/01_train_and_eval.ipynb` →
+`dyson_cnn.train.train_and_save_run`) writes a timestamped subfolder
+under `<project>/runs/<YYYYMMDD_HHMMSS>/` on Google Drive. A run
+directory is the atomic unit of reproducibility — the model file alone
+is useless without the normalization statistics and the axis that were
+used at training time. Never copy `cnn_model.keras` out of its run dir.
+
+Contents of a typical `colab_full` run (`N=10000`, `Npoints=4096`):
+
+| File | Approx. size | Purpose |
+| --- | --- | --- |
+| `cnn_model.keras` | 13 MB | Trained Keras model with weights |
+| `model_meta.json` | 1 KB | Generator parameters snapshot, training profile, seed, head names, loss weights, `y_min`/`y_max` |
+| `y_min.npy` / `y_max.npy` | 140 B each | Per-head min/max computed from the training split only; used to denormalize predictions back to physical units |
+| `B_axis.npy` / `B_axis.csv` | 16 KB / 100 KB | Magnetic field axis consumed by both inference and [matlab/PrepareOneSpectrumForCNN.m](matlab/PrepareOneSpectrumForCNN.m) to resample real spectra onto the exact axis the model was trained on |
+| `history.csv` | 35 KB | Per-epoch training and validation metrics (one row per epoch) for custom plots |
+| `loss.png` | 40 KB | Training / validation loss curve |
+| `loss_full_and_zoom.png` | 100 KB | Same curve plus a zoomed tail region for inspecting late-epoch convergence |
+| `parity_test.png` | 150 KB | Three-panel true-vs-predicted scatter (`B0`, `dB`, `p3`) on the test set, with a `y=x` diagonal |
+| `dysonian_test_predictions.csv` | 110 KB | Per-sample `(B0, dB, p3)` true and predicted values in physical units for ad-hoc analysis |
+| `_X_test.npy` / `_y_test.npy` | 23 MB / 18 KB | Cached test split so `evaluate_run` can be replayed in a separate Jupyter session without re-splitting the dataset |
+
+The leading underscore on `_X_test.npy` / `_y_test.npy` marks them as
+internal implementation files — they let you call `evaluate_run(run_dir)`
+weeks later from a different notebook session without loading the full
+10 000-sample dataset back into memory. Safe to delete if you need the
+disk space back; `evaluate_run` will just fail with a clear error.
+
+The current production run referenced by
+[config/inference.json](config/inference.json) is **`20260411_204438`**
+(`colab_full` profile, early-stopped at epoch 110 with best weights
+restored from epoch 70). Test metrics on 1500 held-out samples:
+
+| Parameter | Range | MAE | RMSE | Relative error |
+| --- | --- | --- | --- | --- |
+| `B0` | 3400–4500 G | 14.88 G | 19.02 G | 1.35 % |
+| `dB` | 250–350 G | 0.80 G | 0.98 G | 0.80 % |
+| `p3` | 1.30–1.50 | 0.0022 | 0.0028 | 1.10 % |
+
 ## Getting started
 
 ### First-time setup (local development)
