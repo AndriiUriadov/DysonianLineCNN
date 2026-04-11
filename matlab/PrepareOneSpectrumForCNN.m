@@ -130,14 +130,21 @@ end
 
 % Check range overlap
 if (min(B_axis) < min(B_real)) || (max(B_axis) > max(B_real))
-    fprintf("[WARN] B_axis extends beyond the range of real B_real.\n");
+    fprintf("[INFO] B_axis extends beyond the measured Bruker sweep window.\n");
     fprintf("       B_axis: [%.3f .. %.3f]\n", min(B_axis), max(B_axis));
     fprintf("       B_real: [%.3f .. %.3f]\n", min(B_real), max(B_real));
-    fprintf("       Linear extrapolation will be used.\n");
+    fprintf("       Outside the measurement window the signal is filled with 0.\n");
 end
 
-% Interpolation (linear + extrapolation)
-spc_on_axis = interp1(B_real, spc_real, B_axis, "linear", "extrap");
+% Interpolation: linear inside the measured window, zero outside.
+% The real Bruker spectrum is recorded over a narrow sweep (~200 G here)
+% while the CNN B_axis spans the full [0, 5000] G training range. Linearly
+% extrapolating over the 4500+ G of unmeasured field generates huge linear
+% tails (×10^7 scale) that dwarf the actual signal and destroy the shape
+% seen by the CNN after per-sample normalization. Zero outside the sweep
+% window is physically correct — the spectrometer did not measure there,
+% and the training data has essentially zero signal far from resonance.
+spc_on_axis = interp1(B_real, spc_real, B_axis, "linear", 0);
 spc_on_axis = double(spc_on_axis(:));
 
 %% === 6) (OPTIONAL) LIGHT SMOOTHING (very mild) ===
