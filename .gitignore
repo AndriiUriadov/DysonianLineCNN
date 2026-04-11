@@ -1,0 +1,51 @@
+# ============================================================================
+# DysonianLineCNN .gitignore
+# Rule of thumb: code and configs in git, data and artifacts in Google Drive.
+# ============================================================================
+
+# --- Data (never commit; lives in Google Drive) ---
+*.npy
+*.mat
+data/*.DTA
+data/*.DSC
+
+# --- Training artifacts (live in Google Drive under runs/) ---
+runs/
+
+# --- Per-spectrum inference artifacts at project root ---
+/*_spectrum.csv
+/*_spectrum_preview.png
+/*_cnn_fit.png
+/*_real_predicted_params.json
+
+# --- Archive of old/unclear files ---
+bin/
+
+# --- User-specific config (absolute paths, personal) ---
+config/paths.json
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Editors / IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- macOS ---
+.DS_Store
+
+# --- redacted Code session state ---
+.redacted/
