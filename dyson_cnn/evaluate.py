@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from matplotlib.axes import Axes
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from scipy.stats import gaussian_kde
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -146,14 +147,19 @@ def _plot_parity_per_head(
     ax.set_title(f"{head_name}: R² = {r2:.5f},  MAE = {mae:.4g}{unit_label}")
     ax.grid(True, alpha=0.3)
 
+    # Cap the number of major ticks so dense ranges (e.g. p3 ∈ [1.30, 1.50])
+    # do not pile up colliding 4- or 5-digit tick labels on the x axis.
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
+
     if show_inset:
         residuals = y_pred - y_true
         axins = inset_axes(
             ax,
             width="38%",
-            height="28%",
+            height="26%",
             loc="upper left",
-            borderpad=1.0,
+            borderpad=1.2,
         )
         axins.hist(
             residuals,
@@ -164,11 +170,30 @@ def _plot_parity_per_head(
             linewidth=0.3,
         )
         axins.axvline(0, color="r", linestyle="--", linewidth=0.8)
-        axins.set_title(
-            f"Residuals  μ={float(residuals.mean()):.2g}, σ={float(residuals.std()):.2g}",
-            fontsize=7,
+
+        # Residual stats inside the inset (top-right), not as a title —
+        # titles sit above the axes where the inset has no room.
+        axins.text(
+            0.97,
+            0.92,
+            f"μ = {float(residuals.mean()):.2g}\nσ = {float(residuals.std()):.2g}",
+            transform=axins.transAxes,
+            ha="right",
+            va="top",
+            fontsize=6.5,
+            bbox=dict(facecolor="white", alpha=0.8, edgecolor="none", pad=1.5),
         )
-        axins.tick_params(axis="both", labelsize=6)
+
+        # X-axis label explains what the histogram shows; no title needed.
+        axins.set_xlabel("residual", fontsize=6, labelpad=1)
+
+        # Drop the y-axis entirely (counts are self-evident from bar height)
+        # so the inset's left edge does not bump into the main plot's y axis.
+        axins.set_yticks([])
+        axins.spines["left"].set_visible(False)
+
+        axins.tick_params(axis="x", labelsize=5, pad=1)
+        axins.xaxis.set_major_locator(MaxNLocator(nbins=4))
         axins.grid(False)
 
 
