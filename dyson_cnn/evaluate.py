@@ -6,14 +6,15 @@ from a different notebook/session without re-splitting.
 
 Produces the following visualization artifacts in the run directory:
 
-    parity_test.{png,pdf}       — 3-panel combined parity (density-colored)
-    parity_B0.{png,pdf}         — full-size B0 parity with residual inset
-    parity_dB.{png,pdf}         — full-size dB parity with residual inset
-    parity_p3.{png,pdf}         — full-size p3 parity with residual inset
-    residuals_test.{png,pdf}    — 3-panel residual histograms
+    parity_test.png       — 3-panel combined parity (density-colored)
+    parity_B0.png         — full-size B0 parity with residual inset
+    parity_dB.png         — full-size dB parity with residual inset
+    parity_p3.png         — full-size p3 parity with residual inset
+    residuals_test.png    — 3-panel residual histograms
 
-PDF versions are for LaTeX article figures; PNG versions are for quick
-preview in a file browser.
+Default output format is PNG only. Pass `formats=["png", "pdf"]` or
+`formats=["png", "pdf", "svg"]` to `evaluate_run` if vector formats are
+needed for LaTeX article figures.
 """
 
 from __future__ import annotations
@@ -38,9 +39,10 @@ HEADS = ["B0", "dB", "p3"]
 # Physical units for axis labels. p3 is dimensionless.
 UNITS: dict[str, str] = {"B0": "G", "dB": "G", "p3": ""}
 
-# Default formats for every figure. PDF is for LaTeX article figures;
-# PNG is for quick preview in file browsers and on GitHub.
-DEFAULT_FORMATS: list[str] = ["png", "pdf"]
+# Default output format for every figure. PNG only by default; users who
+# need vector versions for LaTeX can pass formats=["png", "pdf"] or
+# formats=["png", "pdf", "svg"] to evaluate_run explicitly.
+DEFAULT_FORMATS: list[str] = ["png"]
 
 
 # ---------------------------------------------------------------------------
@@ -187,10 +189,9 @@ def _plot_parity_per_head(
         # X-axis label explains what the histogram shows; no title needed.
         axins.set_xlabel("residual", fontsize=6, labelpad=1)
 
-        # Drop the y-axis entirely (counts are self-evident from bar height)
-        # so the inset's left edge does not bump into the main plot's y axis.
+        # Drop y-axis numbers (counts are self-evident from bar heights)
+        # but KEEP the left spine so the inset still has a four-sided frame.
         axins.set_yticks([])
-        axins.spines["left"].set_visible(False)
 
         axins.tick_params(axis="x", labelsize=5, pad=1)
         axins.xaxis.set_major_locator(MaxNLocator(nbins=4))
@@ -252,16 +253,16 @@ def evaluate_run(
         run_dir: path to the training run directory.
         X_test, y_test, B_axis: optional explicit overrides.
         formats: list of file extensions to save figures to. Defaults to
-            ["png", "pdf"] — PNG for quick preview, PDF for LaTeX article
-            figures. Pass ["png"] to skip PDF, or ["png", "pdf", "svg"]
-            for web-ready vector output too.
+            ["png"] — raster is the usual quick-preview format. Pass
+            ["png", "pdf"] for a LaTeX-embeddable vector copy or
+            ["png", "pdf", "svg"] for web-ready vector output too.
 
     Returns a metrics dict with per-head MAE, RMSE, R², mean residual,
     and std of residuals in physical units. Also writes:
 
-        parity_test.{ext}       — 3-panel combined parity
-        parity_<head>.{ext}     — full-size per-head parity with inset
-        residuals_test.{ext}    — 3-panel residual histograms
+        parity_test.png         — 3-panel combined parity
+        parity_<head>.png       — full-size per-head parity with inset
+        residuals_test.png      — 3-panel residual histograms
         dysonian_test_predictions.csv — raw per-sample predictions
     """
     run_dir = Path(run_dir)
