@@ -9,7 +9,7 @@ Ukraine "Igor Sikorsky Kyiv Polytechnic Institute".
 
 ## Pipeline overview
 
-1. **Synthetic dataset generation (MATLAB, local Mac)** —
+1. **Synthetic dataset generation (MATLAB)** —
    [matlab/DysonGeneratorMix.m](matlab/DysonGeneratorMix.m) produces
    `X_dyson_mix_*.npy` / `y_dyson_mix_*.npy` / `B_axis_mix_*.npy` on Google Drive.
 2. **CNN training and evaluation (Python, Google Colab)** —
@@ -40,36 +40,134 @@ Desktop on Mac or `google.colab.drive.mount` in Colab.
 
 ## Getting started
 
-### First-time setup on macOS
+### First-time setup (local development)
+
+These instructions cover running the pipeline on your own machine for
+dataset generation (MATLAB), Python unit tests, and local model training.
+For Google Colab setup see the [Colab setup](#colab-setup) section — no
+local setup is needed for Colab-only workflows.
+
+The Python side is platform-independent and tested on macOS, Windows, and
+Linux. MATLAB is available on all three platforms as well.
+
+#### Step 1. Clone the repository and create a virtualenv
 
 ```bash
-# 1) Clone and enter the repo
 git clone git@github.com:AndriiUriadov/DysonianLineCNN.git
 cd DysonianLineCNN
-
-# 2) Create a virtualenv and install the package in editable mode
 python3 -m venv .venv
-source .venv/bin/activate
+```
+
+#### Step 2. Activate the virtualenv
+
+The command depends on your OS and shell:
+
+| OS / shell | Activation command |
+| --- | --- |
+| macOS and Linux (bash, zsh) | `source .venv/bin/activate` |
+| Windows PowerShell | `.venv\Scripts\Activate.ps1` |
+| Windows Command Prompt | `.venv\Scripts\activate.bat` |
+| Windows Git Bash or WSL | `source .venv/Scripts/activate` |
+
+On Windows PowerShell, first-time activation may require allowing local
+scripts once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+#### Step 3. Install the package and the git filter
+
+With the venv active:
+
+```bash
 pip install -e ".[dev]"
-
-# 3) Copy the paths template and edit drive_root_mac for your machine
-cp config/paths.example.json config/paths.json
-$EDITOR config/paths.json
-# Set drive_root_mac to your Google Drive for Desktop mount, e.g.
-# /Users/<username>/Library/CloudStorage/GoogleDrive-<email>/My Drive
-# (or "Мій диск" if your Drive is localized)
-
-# 4) Install the nbstripout git filter (one-time, per clone)
 nbstripout --install --attributes .gitattributes
 ```
 
-The `[dev]` extra pulls in `pytest` and `nbstripout`. See
+The `[dev]` extra pulls in `pytest`, `nbstripout`, and `nbformat`. See
 [pyproject.toml](pyproject.toml) for the full dependency list.
 
-On Colab there is no first-time setup beyond adding the `GITHUB_DEPLOY_KEY`
-secret (see the next section). The notebooks bootstrap themselves and
-`load_paths` automatically falls back to `paths.example.json` because
-`drive_root_colab` is universal across users.
+#### Step 4. Create `config/paths.json` for your machine
+
+This file is gitignored because the local Drive mount path is per-user
+and per-OS. Copy the template first:
+
+| OS / shell | Copy command |
+| --- | --- |
+| macOS, Linux, Git Bash, WSL | `cp config/paths.example.json config/paths.json` |
+| Windows PowerShell | `Copy-Item config\paths.example.json config\paths.json` |
+| Windows Command Prompt | `copy config\paths.example.json config\paths.json` |
+
+Then open `config/paths.json` in any text editor and set `drive_root_mac`
+to the absolute path of your Google Drive mount root (see the next
+subsection for platform-specific paths).
+
+> The field is named `drive_root_mac` for historical reasons, but it is
+> used by `load_paths()` on every non-Colab runtime (macOS, Windows,
+> Linux). Treat it as "local Drive root" regardless of your OS.
+
+##### Drive mount paths by OS
+
+**macOS** — install [Google Drive for Desktop](https://www.google.com/drive/download/).
+The mount path is typically:
+
+```text
+/Users/<username>/Library/CloudStorage/GoogleDrive-<email>/My Drive
+```
+
+If your system locale is set to e.g. Ukrainian, the last segment appears
+localized as `Мій диск` instead of `My Drive`. Use the localized name
+that you actually see in Finder.
+
+**Windows** — install [Google Drive for Desktop](https://www.google.com/drive/download/).
+Modern installations mount Drive as a virtual drive letter (commonly `G:`):
+
+```text
+G:\My Drive
+```
+
+Older installations may instead use a folder under the user profile:
+
+```text
+C:\Users\<username>\Google Drive\My Drive
+```
+
+In the JSON file you can write backslashes either as forward slashes
+(simplest) or as escaped pairs:
+
+```json
+"drive_root_mac": "G:/My Drive"
+```
+
+```json
+"drive_root_mac": "G:\\My Drive"
+```
+
+**Linux** — Google does not ship an official Drive client for Linux. The
+working options are:
+
+- **[rclone](https://rclone.org/drive/)** — recommended for scripting-heavy
+  workflows. After `rclone config` to authorize access:
+
+  ```bash
+  mkdir -p ~/gdrive
+  rclone mount gdrive: ~/gdrive --daemon
+  ```
+
+  Then set `"drive_root_mac": "/home/<username>/gdrive"` in `paths.json`.
+
+- **[google-drive-ocamlfuse](https://github.com/astrada/google-drive-ocamlfuse)** —
+  a FUSE-based userland filesystem with similar semantics.
+
+- **Manual sync via the Drive web UI** — slower but dependency-free.
+  In that case `drive_root_mac` points at any local directory where you
+  mirror the project files, and you copy datasets and trained runs back
+  and forth by hand.
+
+#### Colab first-time setup
+
+On Google Colab there is no local install step beyond adding the
+`GITHUB_DEPLOY_KEY` secret (see [Colab setup](#colab-setup) below). The
+notebooks bootstrap themselves on a fresh runtime and `load_paths`
+automatically falls back to `paths.example.json` because `drive_root_colab`
+is universal across users (`/content/drive/MyDrive`).
 
 ### Running tests
 
