@@ -37,7 +37,7 @@ assert(isfile(dtaFile), 'DTA file not found: %s', dtaFile);
 
 %% Load spectrum via EasySpin
 if exist('eprload','file') ~= 2
-    addpath('/Users/a.uriadov/Documents/easyspin-6.0.11/easyspin');
+    error('EasySpin not found. Add it to MATLAB path: addpath(''/path/to/easyspin''); savepath;');
     rehash toolboxcache;
 end
 

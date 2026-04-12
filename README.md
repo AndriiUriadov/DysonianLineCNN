@@ -1,38 +1,64 @@
 # DysonianLineCNN
 
-A hybrid MATLAB + Python pipeline for regressing Dysonian EPR line parameters
-(`B0`, `dB`, `p3`) from first-derivative EPR spectra using a 1D CNN, and for
-applying the trained model to real experimental Bruker spectra (`.DTA` / `.DSC`).
+A hybrid MATLAB + Python pipeline for extracting Dysonian EPR line parameters
+(`B0`, `dB`, `p`) from first-derivative EPR spectra. Three methods are
+compared on 180 experimental spectra across 5 independent datasets:
+
+1. **MATLAB optimizer** — `lsqnonlin` with Feher-Kip Dysonian model
+2. **EasySpin esfit** — Levenberg-Marquardt, two-step approach
+3. **1D Residual CNN** — trained on synthetic spectra, predicts parameters
+   directly from the normalized spectrum shape
+
+All three methods use the same physical model with the full two-term A/D
+coefficients (Holiatkina et al., *J. Appl. Phys.* **134**, 145702, 2023).
 
 **Authors:** A.V. Uriadov, D.V. Savchenko — National Technical University of
 Ukraine "Igor Sikorsky Kyiv Polytechnic Institute".
 
-## Pipeline overview
+## Pipeline overview (per-set)
 
-1. **Synthetic dataset generation (MATLAB)** —
-   [matlab/DysonGeneratorMix.m](matlab/DysonGeneratorMix.m) produces
-   `X_dyson_mix_*.npy` / `y_dyson_mix_*.npy` / `B_axis_mix_*.npy` on Google Drive.
-2. **CNN training and evaluation (Python, Google Colab)** —
-   [notebooks/01_train_and_eval.ipynb](notebooks/01_train_and_eval.ipynb) is a
-   thin wrapper around the [dyson_cnn/](dyson_cnn/) package.
-3. **Inference on real spectra (MATLAB + Python)** —
+Each experimental set has its own parameter ranges and magnetic field window,
+requiring an independent CNN model. The workflow for each set:
+
+1. **Classical baselines (MATLAB)** —
+   [matlab/baseline/FitAll.m](matlab/baseline/FitAll.m) fits all spectra in
+   `data/set-N/` with both MATLAB lsqnonlin and EasySpin esfit, saving
+   results to `results/set-N/{matlab,easyspin}/`.
+
+2. **Synthetic dataset generation (MATLAB)** —
+   [matlab/DysonGeneratorMix.m](matlab/DysonGeneratorMix.m) reads per-set
+   config from [config/sets/set-N.json](config/sets/) and writes
+   `.npy` files to Google Drive (`DysonianLineCNN/set-N/`).
+
+3. **CNN training (Google Colab)** —
+   [notebooks/01_train_and_eval.ipynb](notebooks/01_train_and_eval.ipynb)
+   trains the CNN and saves the run to `Drive/DysonianLineCNN/set-N/runs/`.
+
+4. **Inference on real spectra** —
    [matlab/PrepareOneSpectrumForCNN.m](matlab/PrepareOneSpectrumForCNN.m)
-   resamples a real spectrum onto the run's `B_axis`, then
-   [notebooks/02_infer_real.ipynb](notebooks/02_infer_real.ipynb) predicts
-   parameters, and [matlab/Validator.m](matlab/Validator.m) reconstructs
-   the fitted curve for visual comparison.
+   resamples spectra onto the run's `B_axis`, then
+   [dyson_cnn.infer.predict_for_set](dyson_cnn/infer.py) predicts parameters,
+   and [matlab/Validator.m](matlab/Validator.m) overlays the reconstruction.
+
+5. **Comparison** — Side-by-side results from all three methods in
+   `results/set-N/comparison.csv`.
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| [config/](config/) | JSON configuration files (paths, dataset, training, inference) |
+| [config/](config/) | JSON configs: paths, training profiles, inference target |
+| [config/sets/](config/sets/) | Per-set dataset generation parameters (B0/dB/p ranges, BWindow) |
 | [dyson_cnn/](dyson_cnn/) | Python package: data, model, training, evaluation, inference |
-| [matlab/](matlab/) | MATLAB scripts: dataset generator, spectrum preparation, validator |
-| [notebooks/](notebooks/) | Thin Colab notebooks that import from `dyson_cnn/` |
-| [tests/](tests/) | `pytest` suite |
-| [data/](data/) | Raw experimental Bruker spectra (`.DTA`/`.DSC`) and baseline MATLAB fitters |
-| [Documentation/](Documentation/) | Thesis PDFs, architecture diagram, BibTeX |
+| [matlab/](matlab/) | MATLAB scripts: dataset generator, spectrum prep, validator |
+| [matlab/baseline/](matlab/baseline/) | Classical fitters: FitMatlab.m, FitEasyspin.m, FitAll.m |
+| [notebooks/](notebooks/) | Thin Colab/Mac notebooks with `SET_NAME` variable |
+| [tests/](tests/) | 49 pytest tests |
+| [results/](results/) | Summary CSVs and comparison tables (committed); per-spectrum JSON/PNG (local) |
+| [data/](data/) | Raw experimental Bruker spectra in `set-1/` through `set-5/` (not in git) |
+| [latex/](latex/) | LaTeX report with fit overlays for all 180 spectra |
+| [Analysis.md](Analysis.md) | Full analysis: CNN metrics, method comparison, conclusions |
+| [Documentation/](Documentation/) | Reference papers, BibTeX, architecture diagrams |
 
 Data (`.npy`, `.DTA`, `.DSC`) and training artifacts (`runs/`) are **not**
 stored in git — they live on Google Drive and are accessed via Drive for
@@ -76,16 +102,20 @@ weeks later from a different notebook session without loading the full
 10 000-sample dataset back into memory. Safe to delete if you need the
 disk space back; `evaluate_run` will just fail with a clear error.
 
-The current production run referenced by
-[config/inference.json](config/inference.json) is **`20260411_204438`**
-(`colab_full` profile, early-stopped at epoch 110 with best weights
-restored from epoch 70). Test metrics on 1500 held-out samples:
+### Current production runs
 
-| Parameter | Range | MAE | RMSE | Relative error |
-| --- | --- | --- | --- | --- |
-| `B0` | 3400–4500 G | 14.88 G | 19.02 G | 1.35 % |
-| `dB` | 250–350 G | 0.80 G | 0.98 G | 0.80 % |
-| `p3` | 1.30–1.50 | 0.0022 | 0.0028 | 1.10 % |
+Each set has an independent CNN model trained on set-specific synthetic data.
+
+| Set | Run | Spectra | B0 MAE (G) | dB MAE (G) | p MAE |
+| --- | --- | --- | --- | --- | --- |
+| set-1 | `20260412_122613` | 6 | 1.14 | 0.27 | 0.012 |
+| set-2 | `20260412_125230` | 2 | 5.37 | 5.14 | 0.012 |
+| set-3 | `20260412_135545` | 53 | 0.67 | 0.51 | 0.021 |
+| set-4 | `20260412_141449` | 80 | 0.56 | 0.77 | 0.022 |
+| set-5 | `20260412_143406` | 39 | 0.80 | 0.33 | 0.015 |
+
+All models: 691,283 parameters, `colab_full` profile, R² > 0.998 on all heads.
+See [Analysis.md](Analysis.md) for the full three-method comparison.
 
 ## Getting started
 
@@ -224,8 +254,8 @@ is universal across users (`/content/drive/MyDrive`).
 pytest tests/ -v
 ```
 
-42 tests cover config loading, normalization invariants, channel order,
-model architecture, and inference. All should pass in a few seconds.
+49 tests cover config loading (including per-set), normalization invariants,
+channel order, model architecture, and inference. All should pass in a few seconds.
 
 ### Colab setup
 
@@ -280,7 +310,55 @@ notebook fails with a clear error, so writes stay local to your Mac.
 After the first successful `git pull` in Colab, the notebooks are cached
 in `/content/DysonianLineCNN` for the session.
 
+## Reproducing results for a specific set
+
+After completing the setup above, reproduce the full pipeline for any set
+(e.g. `set-1`):
+
+```bash
+# 1. Classical baselines (requires MATLAB + EasySpin + Optimization Toolbox)
+matlab -batch "addpath('matlab'); addpath('matlab/baseline'); FitAll('set-1')"
+
+# 2. Generate synthetic training data (requires MATLAB + npy-matlab)
+matlab -batch "addpath('matlab'); SetName='set-1'; DysonGeneratorMix"
+
+# 3. Train CNN on Google Colab
+#    Open notebooks/01_train_and_eval.ipynb, set SET_NAME = "set-1", run all cells
+
+# 4. Update config/inference.json with the new runName and set_name
+
+# 5. Prepare real spectra for CNN (requires MATLAB + EasySpin)
+#    Loop PrepareOneSpectrumForCNN for each spectrum_basename in the set
+
+# 6. CNN inference (Python)
+python -c "
+from dyson_cnn.infer import predict_for_set
+for i in range(1, 7):  # adjust range for other sets
+    predict_for_set('config', 'set-1', spectrum_basename=str(i))
+"
+
+# 7. Validate: overlay CNN reconstruction on experimental spectra
+#    Loop Validator for each spectrum_basename in the set
+
+# 8. Compile LaTeX report
+cd latex && pdflatex report.tex && pdflatex report.tex
+```
+
+Per-set configuration files (`config/sets/set-N.json`) contain the
+parameter ranges determined from the classical baseline fits. See
+[Analysis.md](Analysis.md) for the rationale behind each range choice.
+
+### Key configuration notes
+
+- **BWindow_G** must match the intersection of all Bruker sweeps in
+  the set. Use `eprload` to check B ranges before generation.
+- **BOffsetRange_G** and **BScaleRange** should be `[0,0]` and `[1,1]`
+  respectively — field calibration augmentation degrades B0 accuracy.
+- All Dyson model formulas use the full two-term A/D coefficients from
+  Holiatkina et al. (2023). Verify consistency if modifying any fitter.
+
 ### Further reading
 
 - [config/README.md](config/README.md) — every tunable parameter documented
-- [Documentation/](Documentation/) — thesis PDFs, BibTeX, architecture diagram
+- [Analysis.md](Analysis.md) — full three-method comparison and conclusions
+- [Documentation/](Documentation/) — reference papers, BibTeX, architecture diagram

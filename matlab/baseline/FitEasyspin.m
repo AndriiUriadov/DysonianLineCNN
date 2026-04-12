@@ -38,7 +38,7 @@ assert(isfile(dtaFile), 'DTA file not found: %s', dtaFile);
 
 %% Load EasySpin
 if exist('esfit','file') ~= 2 || exist('eprload','file') ~= 2
-    addpath('/Users/a.uriadov/Documents/easyspin-6.0.11/easyspin');
+    error('EasySpin not found. Add it to MATLAB path: addpath(''/path/to/easyspin''); savepath;');
     rehash toolboxcache;
 end
 
