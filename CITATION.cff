@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "DysonianLineCNN: 1D CNN for Dysonian EPR Line Parameter Extraction"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - given-names: Andrii
+    family-names: Uriadov
+    name-particle: V.
+    affiliation: "National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute'"
+    orcid: ""
+  - given-names: Dmytro
+    family-names: Savchenko
+    name-particle: V.
+    affiliation: "National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute'"
+    orcid: ""
+repository-code: "https://github.com/AndriiUriadov/DysonianLineCNN"
+license: MIT
+version: "1.0.0"
+date-released: "2026-04-12"
+keywords:
+  - EPR spectroscopy
+  - Dysonian line shape
+  - convolutional neural network
+  - parameter extraction
+  - Feher-Kip model

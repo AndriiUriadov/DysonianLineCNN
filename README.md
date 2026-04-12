@@ -360,5 +360,15 @@ parameter ranges determined from the classical baseline fits. See
 ### Further reading
 
 - [config/README.md](config/README.md) — every tunable parameter documented
-- [Analysis.md](Analysis.md) — full three-method comparison and conclusions
-- [Documentation/](Documentation/) — reference papers, BibTeX, architecture diagram
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+If you use this software in your research, please cite it:
+
+> A.V. Uriadov, D.V. Savchenko, "DysonianLineCNN: 1D CNN for Dysonian EPR
+> Line Parameter Extraction," 2026. https://github.com/AndriiUriadov/DysonianLineCNN
+
+See [CITATION.cff](CITATION.cff) for the machine-readable citation format
+(GitHub renders a "Cite this repository" button automatically).
