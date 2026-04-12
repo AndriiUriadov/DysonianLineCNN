@@ -1,15 +1,15 @@
 {
-  "_doc": "Per-set dataset generation parameters for set-2 (6 spectra). Ranges to be determined after running FitAll('set-2') and reviewing results/set-2/matlab/summary.csv.",
+  "_doc": "Per-set dataset generation parameters for set-2 (2 spectra: 022704, 042312). Ranges from FitAll: B0~3434-3994, dB~300-824, p~1.18-1.56. Wide sweeps [0,~5000-7000 G], narrow mode.",
 
   "N": 10000,
   "Npoints": 4096,
   "Seed": 1,
   "Prefix": "dataset",
 
-  "B0Range_G": [3300, 3500],
-  "dBRange_G": [50, 200],
-  "pRange": [0.5, 3.0],
-  "BWindow_G": [0, 5000],
+  "B0Range_G": [3300, 4100],
+  "dBRange_G": [200, 900],
+  "pRange": [0.5, 2.5],
+  "BWindow_G": [0, 6998.29],
   "dB_thr_G": 1000,
 
   "DoAugment": true,
@@ -18,8 +18,8 @@
   "BaselineOffsetRange": [-0.01, 0.01],
   "BaselineSlopeRange": [-0.02, 0.02],
   "BaselineQuadRange": [-0.01, 0.01],
-  "BScaleRange": [0.998, 1.002],
-  "BOffsetRange_G": [-5, 5],
+  "BScaleRange": [1.0, 1.0],
+  "BOffsetRange_G": [0, 0],
 
   "SpikeProb": 0.0,
   "SpikeCountRange": [1, 2],
