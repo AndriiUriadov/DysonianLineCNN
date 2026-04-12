@@ -9,7 +9,7 @@
   "B0Range_G": [3280, 3430],
   "dBRange_G": [10, 50],
   "pRange": [0.5, 2.0],
-  "BWindow_G": [3200, 3500],
+  "BWindow_G": [3257.85, 3455.90],
   "dB_thr_G": 1000,
 
   "DoAugment": true,
