@@ -3,16 +3,12 @@ title: "DysonianLineCNN: 1D CNN for Dysonian EPR Line Parameter Extraction"
 message: "If you use this software, please cite it as below."
 type: software
 authors:
-  - given-names: Andrii
+  - given-names: Andrii V.
     family-names: Uriadov
-    name-particle: V.
     affiliation: "National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute'"
-    orcid: ""
-  - given-names: Dmytro
+  - given-names: Dmytro V.
     family-names: Savchenko
-    name-particle: V.
     affiliation: "National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute'"
-    orcid: ""
 repository-code: "https://github.com/AndriiUriadov/DysonianLineCNN"
 license: MIT
 version: "1.0.0"
