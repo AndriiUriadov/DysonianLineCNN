@@ -1,51 +1,56 @@
-% ------------------------ DysonGeneratorMix.m ----------------------------
+%% ========================================================================
+%  DysonGeneratorMix.m
+%  Synthetic EPR Dysonian / Modified-Dyson (Joshi) Dataset Generator
 %
-% Synthetic EPR Dyson / Modified-Dyson (Joshi) Dataset Generator
+%  Authors:  A.V. Uriadov, D.V. Savchenko
+%  National Technical University of Ukraine
+%  "Igor Sikorsky Kyiv Polytechnic Institute"
 %
-% -------------------------------------------------------------------------
+% =========================================================================
 %
-% Authors: A.V.Uriadov, D.V.Savchenko
-% National Technical University of Ukraine
-% "Igor Sikorsky Kyiv Polytechnic Institute"
+%  PURPOSE
+%    Generate synthetic first-derivative EPR spectra for training a CNN
+%    to regress Dysonian line parameters (B0, dB, p). Automatically
+%    selects narrow (Feher-Kip Dyson, parameter p) or wide (Joshi,
+%    parameter alpha) model based on dBRange vs dB_thr_G (default 1000 G).
 %
-% -------------------------------------------------------------------------
+%  USAGE
+%    % Legacy single-model mode:
+%    DysonGeneratorMix
 %
-% PURPOSE
-%   Generate synthetic EPR spectra (first-derivative signal) for training
-%   CNN models on Dysonian line parameters. The generator automatically
-%   selects the *narrow* (standard Dyson, parameter p) or *wide* (modified
-%   Dyson by Joshi, parameter alpha) model based on the requested dB range:
-%       - Narrow-only:  dB_max < dB_thr (default dB_thr = 1000 G = 100 mT)
-%       - Wide-only:    dB_min > dB_thr
-%       - Mixed range:  error (choose either narrow-only or wide-only)
+%    % Per-set mode (reads config/sets/<SetName>.json):
+%    SetName = 'set-1'; DysonGeneratorMix
 %
-% KEY CONVENTIONS
-%   - Units: All field-related quantities are in Gauss (G).
-%   - Threshold: dB_thr = 1000 G.
-%   - Output spectra: "visible right half" only (B > 0) with Npoints samples.
-%   - Output signal: first derivative dI/dB (as in EPR spectrometers).
-%   - Labels y = [B0, dB, p3]:
-%       * Narrow mode: p3 = physical p (skin-effect parameter)
-%       * Wide mode:   p3 = alpha (>=0) used in Joshi model
-%     (The 3rd label is a generic "asymmetry parameter")
+%  CONFIGURATION
+%    All parameters come from JSON config files via load_config():
+%      - Per-set mode:  config/sets/<SetName>.json
+%      - Legacy mode:   config/dataset.json
+%    Output directory resolved from config/paths.json.
+%    Per-set output goes to <DriveProjectDir>/<SetName>/.
 %
-% PIPELINE (UNIFIED FOR NARROW & WIDE)
-%   physics -> polarity fix -> (optional) modulation smoothing ->
-%   field scale/offset warp + resample -> baseline -> noise -> spikes ->
-%   robust normalization
+%  PHYSICS MODEL
+%    Feher-Kip Dysonian derivative with full two-term A/D coefficients
+%    (Holiatkina et al., J. Appl. Phys. 134, 145702, 2023).
 %
-% OUTPUT FILES (NEW NAMES)
-%   - X_dyson_mix_<Prefix>.npy (or .mat): [N x Npoints] float32
-%   - y_dyson_mix_<Prefix>.npy (or .mat): [N x 3] float32
-%   - B_axis_mix_<Prefix>.npy  (or .mat): [1 x Npoints] float32 (B>0 axis)
-%   - meta_mix_<Prefix>.json: generation metadata (mode, ranges, etc.)
+%  AUGMENTATION PIPELINE
+%    physics -> polarity fix -> modulation smoothing (probabilistic) ->
+%    field scale/offset warp + resample -> baseline -> noise -> spikes ->
+%    peak-to-peak normalization
 %
-% NOTES
-%   - Saving as .npy requires MATLAB Python integration + NumPy installed.
-%     If not available, the generator falls back to .mat.
-%   - For strict reproducibility, 'Seed' is fixed and stored in meta JSON.
+%  OUTPUT FILES
+%    X_dyson_mix_<Prefix>.npy   [N x Npoints] float32 — spectra
+%    y_dyson_mix_<Prefix>.npy   [N x 3]       float32 — labels [B0, dB, p3]
+%    B_axis_mix_<Prefix>.npy    [Npoints]      float32 — magnetic field axis
+%    meta_mix_<Prefix>.json     struct         — generation metadata
 %
-% -------------------------------------------------------------------------
+%  LABELS
+%    y(:,3) = p in narrow mode (skin-effect parameter)
+%    y(:,3) = alpha in wide mode (Joshi asymmetry, alpha >= 0)
+%
+%  REQUIREMENTS
+%    MATLAB R2025b, npy-matlab (writeNPY) or Python+NumPy for .npy output
+%
+% =========================================================================
 
 %% --------------------- Load config ---------------------
 % All tunable defaults come from config JSON files so that MATLAB and

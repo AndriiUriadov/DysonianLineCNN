@@ -1,24 +1,47 @@
-%% Validator.m
-% ------------------------------------------------------------
+%% ========================================================================
+%  Validator.m
+%  Reconstruct a Dysonian spectrum from CNN-predicted parameters and
+%  overlay it on the experimental data for visual quality assessment
 %
-% Authors: A.V.Uriadov, D.V.Savchenko
-% National Technical University of Ukraine
-% "Igor Sikorsky Kyiv Polytechnic Institute"
+%  Authors:  A.V. Uriadov, D.V. Savchenko
+%  National Technical University of Ukraine
+%  "Igor Sikorsky Kyiv Polytechnic Institute"
 %
-% ------------------------------------------------------------
-% PURPOSE:
-%   Validation of CNN-predicted Dyson line parameters
-%   by reconstruction and comparison with experimental EPR spectra
+% =========================================================================
 %
-% DATA SOURCES:
-%   - Exp data:   data/SPECTRUM_ID.DTA  
-%   - B axis:     run/<runName>/B_axis.csv or B_axis.npy
-%   - CNN params: run/<runName>/real_predicted_params.json
-%   - Meta:       run/<runName>/model_meta.json (for dB_thr_G)
+%  PURPOSE
+%    Load CNN-predicted parameters (B0, dB, p) and the original Bruker
+%    spectrum, reconstruct the Dysonian line shape, scale it to the
+%    experimental data via least-squares (a*sim + b), and save an overlay
+%    plot for visual validation.
 %
-% OUTPUT FILES 
-%   - <SPECTRUM_ID>_cnn_fit.png
-% ------------------------------------------------------------
+%  CONFIGURATION
+%    Reads from config/inference.json:
+%      set_name, runName, spectrum_basename
+%    Reads per-set dataset config (config/sets/<set_name>.json or
+%    config/dataset.json) for dB_thr_G (narrow/wide mode threshold).
+%
+%  INPUT
+%    data/<set_name>/<basename>.DTA               — raw Bruker spectrum
+%    <Drive>/<set_name>/runs/<runName>/B_axis.csv  — CNN magnetic field axis
+%    <Drive>/<set_name>/runs/<runName>/model_meta.json — training metadata
+%    <Drive>/<set_name>/<basename>_real_predicted_params.json — CNN output
+%
+%  OUTPUT
+%    <Drive>/<set_name>/<basename>_cnn_fit.png — overlay plot
+%      Title: set-N/id | B0=... G, dB=... G, p=...
+%      Green = experimental, Red = CNN reconstruction
+%
+%  PHYSICS MODEL
+%    Feher-Kip Dysonian derivative with full two-term A/D coefficients
+%    (Holiatkina et al., J. Appl. Phys. 134, 145702, 2023).
+%    Narrow mode (dB < dB_thr): standard Dyson.
+%    Wide mode (dB > dB_thr): modified Dyson/Joshi.
+%
+%  REQUIREMENTS
+%    EasySpin (eprload), MATLAB R2025b
+%
+% =========================================================================
 
 clear; clc;
 

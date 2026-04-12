@@ -1,23 +1,45 @@
-%% -------------- PrepareOneSpectrumForCNN.m --------------
+%% ========================================================================
+%  PrepareOneSpectrumForCNN.m
+%  Resample a real Bruker EPR spectrum onto the CNN model's magnetic axis
 %
-% Prepares ONE real spectrum (from .DTA/.DSC) for input into a CNN in Colab.
+%  Authors:  A.V. Uriadov, D.V. Savchenko
+%  National Technical University of Ukraine
+%  "Igor Sikorsky Kyiv Polytechnic Institute"
 %
-% ---------------------------------------------------------
+% =========================================================================
 %
-% Authors: A.V.Uriadov, D.V.Savchenko
-% National Technical University of Ukraine
-% "Igor Sikorsky Kyiv Polytechnic Institute"
+%  PURPOSE
+%    Load a single experimental .DTA/.DSC spectrum, resample it onto the
+%    B_axis of a trained CNN run, and save the result as a CSV file for
+%    CNN inference. The CNN expects exactly 4096 points on the same axis
+%    it was trained on.
 %
-% ---------------------------------------------------------
-% 
-% Output: spectrum.csv in the project root (where this .m file is located),
-%         plus a PNG preview.
+%  CONFIGURATION
+%    Reads from config/inference.json:
+%      set_name          — e.g. "set-1" (per-set mode) or absent (legacy)
+%      runName           — timestamp of the CNN run directory
+%      spectrum_basename — e.g. "1" (filename without .DTA extension)
+%    Reads from config/paths.json:
+%      drive_root_mac, project_subdir, runs_subdir
 %
-% Requirements:
-% 1) The project root contains the folder runs/<runName>/B_axis.csv;
-% 2) The real spectrum is located in the data folder (under project root);
-% 3) Bruker reading function is required: eprload (EasySpin).
-% ---------------------------------------------------------
+%  INPUT
+%    data/<set_name>/<spectrum_basename>.DTA  — raw Bruker spectrum
+%    <Drive>/<set_name>/runs/<runName>/B_axis.csv — CNN magnetic field axis
+%
+%  OUTPUT
+%    <Drive>/<set_name>/<spectrum_basename>_spectrum.csv      — 4096x1 CSV
+%    <Drive>/<set_name>/<spectrum_basename>_spectrum_preview.png — preview
+%
+%  RESAMPLING
+%    Linear interpolation inside the measured Bruker sweep window.
+%    Zero-fill outside (the spectrometer did not measure there).
+%    BWindow in config/sets/<set_name>.json should match the Bruker sweep
+%    intersection to minimize zero-filled regions.
+%
+%  REQUIREMENTS
+%    EasySpin (eprload), MATLAB R2025b
+%
+% =========================================================================
 
 clear; clc; close all;
 
