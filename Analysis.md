@@ -143,6 +143,58 @@ All models: 691,283 parameters, 3-channel input (z-score, ptp, B_axis),
 colab_full profile (300 max epochs, batch=64, lr=1e-3, EarlyStopping
 patience=40).
 
+## Conclusions
+
+1. **The 1D residual CNN achieves accuracy comparable to classical
+   optimization methods** (MATLAB lsqnonlin and EasySpin esfit) for
+   extracting Dysonian EPR line parameters B0, dB, and p from
+   first-derivative spectra. Across 180 experimental spectra in 5
+   independent sets, the CNN predictions agree with EasySpin results
+   within ΔB0 ≈ 1–5 G, ΔdB ≈ 0.5–4 G, and Δp ≈ 0.04–0.3 for
+   narrow-line sets (set-1, set-3–5). R² > 0.998 on synthetic test
+   data for all three output heads in every set.
+
+2. **The CNN is 10–300× faster than classical methods**, requiring ~0.1 s
+   per spectrum (single forward pass) compared to 1–30 s for iterative
+   optimization. This makes CNN-based parameter extraction practical for
+   high-throughput analysis of large spectral datasets where classical
+   fitting would be prohibitively slow.
+
+3. **Correct physical model and careful data preparation are more important
+   than model architecture.** The three most impactful improvements during
+   development were all about data, not the neural network:
+   - Unifying the Dyson A/D coefficient formula across all pipeline
+     components (eliminated ~0.5 systematic bias in p)
+   - Matching BWindow to the exact experimental sweep (eliminated
+     zero-filled tails, improved resolution 17×)
+   - Disabling BOffset augmentation (improved B0 MAE 3.4×, from 3.89 to
+     1.14 G)
+
+4. **Each experimental set requires its own CNN model.** The parameter
+   ranges (B0, dB, p) and magnetic field windows vary significantly
+   between sets. A model trained on one set does not generalize to another.
+   The per-set training workflow — classical fit to determine ranges,
+   synthetic data generation, CNN training, inference, validation — takes
+   approximately 15 minutes per set (including ~5 min Colab training on
+   T4 GPU).
+
+5. **Classical methods remain necessary as a reference.** The CNN has no
+   built-in uncertainty estimation and cannot detect when a spectrum falls
+   outside its training distribution. Classical methods, despite being
+   slower, provide confidence intervals and convergence diagnostics.
+   The recommended workflow for publication-quality results is: CNN for
+   rapid initial screening, followed by classical verification on spectra
+   of interest.
+
+6. **The three methods are complementary.** MATLAB lsqnonlin provides the
+   most flexible fit (9 parameters including field calibration), EasySpin
+   esfit offers robust convergence through its two-step masked approach,
+   and the CNN offers unmatched speed. Discrepancies between methods
+   (particularly the ~15–20 G systematic B0 offset between MATLAB and
+   EasySpin/CNN) highlight the importance of reporting which method and
+   which Dyson model parameterization was used when publishing EPR
+   line parameters.
+
 ## Files
 
 - Per-set summaries: `results/set-N/{matlab,easyspin,cnn}/summary.csv`
