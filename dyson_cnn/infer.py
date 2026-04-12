@@ -146,3 +146,46 @@ def predict_real_spectrum(
         print(f"[INFO] Saved input channel preview to: {out_png}")
 
     return result
+
+
+def predict_for_set(
+    config_dir: str | Path,
+    set_name: str,
+    spectrum_basename: str | None = None,
+    run_name: str | None = None,
+) -> dict[str, Any]:
+    """High-level convenience: predict one real spectrum for a given set.
+
+    Resolves all paths from ``config/inference.json`` and
+    ``config/sets/<set_name>.json``, then delegates to
+    ``predict_real_spectrum``.
+
+    Args:
+        config_dir: path to the config/ directory.
+        set_name: e.g. ``"set-1"``.
+        spectrum_basename: override inference.json ``spectrum_basename``.
+        run_name: override inference.json ``runName``.
+
+    Returns:
+        The result dict from ``predict_real_spectrum``.
+    """
+    from . import config as cfg_mod
+
+    paths = cfg_mod.load_paths(config_dir, set_name=set_name)
+    inf_cfg = cfg_mod.load_inference_cfg(config_dir)
+
+    run_name = run_name or inf_cfg["runName"]
+    basename = spectrum_basename or inf_cfg["spectrum_basename"]
+
+    set_project_dir = Path(paths["set_project_dir"])
+    run_dir = Path(paths["set_runs_dir"]) / run_name
+    spectrum_csv = set_project_dir / f"{basename}_spectrum.csv"
+    out_json = set_project_dir / f"{basename}_real_predicted_params.json"
+    out_png = set_project_dir / f"{basename}_spectrum_preview.png"
+
+    return predict_real_spectrum(
+        run_dir=run_dir,
+        spectrum_csv_path=spectrum_csv,
+        out_json_path=out_json,
+        out_preview_png_path=out_png,
+    )

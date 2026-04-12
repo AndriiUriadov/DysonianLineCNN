@@ -214,7 +214,8 @@ def train_and_save_run(
 
     # 11) Create timestamped run directory
     stamp = time.strftime("%Y%m%d_%H%M%S")
-    run_dir = Path(paths["runs_dir"]) / stamp
+    runs_base = Path(paths.get("set_runs_dir", paths["runs_dir"]))
+    run_dir = runs_base / stamp
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"[INFO] Run directory: {run_dir}")
 
@@ -227,6 +228,7 @@ def train_and_save_run(
 
     meta_out = {
         "created": stamp,
+        "set_name": paths.get("set_name"),
         "dataset_prefix": dataset_cfg.get("Prefix", "unknown"),
         "profile_name": training_cfg.get("profile_name", "unknown"),
         "precision_policy": precision,

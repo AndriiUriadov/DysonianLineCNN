@@ -1,0 +1,33 @@
+{
+  "_doc": "Per-set dataset generation parameters for set-5 (6 spectra). Ranges to be determined after running FitAll('set-5') and reviewing results/set-5/matlab/summary.csv.",
+
+  "N": 10000,
+  "Npoints": 4096,
+  "Seed": 1,
+  "Prefix": "dataset",
+
+  "B0Range_G": [3300, 3500],
+  "dBRange_G": [50, 200],
+  "pRange": [0.5, 3.0],
+  "BWindow_G": [0, 5000],
+  "dB_thr_G": 1000,
+
+  "DoAugment": true,
+
+  "SNRdBRange": [40, 60],
+  "BaselineOffsetRange": [-0.01, 0.01],
+  "BaselineSlopeRange": [-0.02, 0.02],
+  "BaselineQuadRange": [-0.01, 0.01],
+  "BScaleRange": [0.998, 1.002],
+  "BOffsetRange_G": [-5, 5],
+
+  "SpikeProb": 0.0,
+  "SpikeCountRange": [1, 2],
+  "SpikeAmpRange": [0.01, 0.05],
+
+  "ModSmoothProb": 0.05,
+  "ModSmoothSigmaPts": [0.6, 2.5],
+
+  "DoVisualCheck": true,
+  "Nvisual": 10
+}

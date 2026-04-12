@@ -48,12 +48,23 @@
 % -------------------------------------------------------------------------
 
 %% --------------------- Load config ---------------------
-% All tunable defaults come from config/dataset.json so that MATLAB and
-% Python share a single source of truth. The script is still callable
-% with name/value overrides via inputParser for quick experiments.
+% All tunable defaults come from config JSON files so that MATLAB and
+% Python share a single source of truth. When SetName is provided (e.g.
+% 'set-1'), reads config/sets/<SetName>.json instead of config/dataset.json
+% and saves output to <DriveProjectDir>/<SetName>/ instead of the root.
 thisFileDir = fileparts(mfilename('fullpath'));
 addpath(thisFileDir);  % ensure load_config is discoverable
-cfgDS    = load_config('dataset');
+
+% Optional set name: set by caller before running, or empty for legacy mode
+if ~exist('SetName','var') || isempty(SetName)
+    SetName = '';
+end
+
+if ~isempty(SetName)
+    cfgDS = load_config(['sets/' SetName]);
+else
+    cfgDS = load_config('dataset');
+end
 cfgPaths = load_config('paths');
 
 %% --------------------- Debug settings ---------------------
@@ -196,17 +207,23 @@ y = zeros(N, 3, 'single');
 %% --------------------- Output paths ---------------------
 % Output directory handling:
 % If OutDir is empty (the default), resolve from config/paths.json to the
-% Drive project folder: fullfile(drive_root_mac, project_subdir). If OutDir
-% is explicitly provided but does not exist, fall back to the Drive folder
-% rather than writing next to the script (where files would clutter the git
-% repo working tree).
+% Drive project folder. When SetName is provided, output goes to a per-set
+% subdirectory: <DriveProjectDir>/<SetName>/.
 DriveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
 if isempty(outDir)
-    outDir = DriveProjectDir;
+    if ~isempty(SetName)
+        outDir = fullfile(DriveProjectDir, SetName);
+    else
+        outDir = DriveProjectDir;
+    end
 elseif ~exist(outDir,'dir')
     warning('outDir does not exist: %s\nSaving to Drive project folder: %s', ...
             outDir, DriveProjectDir);
-    outDir = DriveProjectDir;
+    if ~isempty(SetName)
+        outDir = fullfile(DriveProjectDir, SetName);
+    else
+        outDir = DriveProjectDir;
+    end
 end
 if ~exist(outDir,'dir')
     mkdir(outDir);
@@ -273,6 +290,7 @@ end
 %% --------------------- Save outputs ---------------------
 meta = struct();
 meta.created_utc = char(datetime('now','TimeZone','UTC','Format','yyyy-MM-dd''T''HH:mm:ss''Z'''));
+if ~isempty(SetName); meta.set_name = SetName; end
 meta.mode = mode;
 meta.units = 'G';
 meta.N = N;

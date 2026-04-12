@@ -1,6 +1,7 @@
 {
   "_doc": "Selects which trained model and which real spectrum to run inference on. Edited between runs. runName must be updated after the first successful training (see config/README.md).",
 
+  "set_name": "set-1",
   "runName": "20260411_204438",
   "spectrum_basename": "1",
   "dataset_prefix": "dataset"

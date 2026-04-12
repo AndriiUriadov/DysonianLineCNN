@@ -53,7 +53,10 @@ def _detect_platform() -> str:
     return "mac"
 
 
-def load_paths(config_dir: str | Path) -> dict[str, Any]:
+def load_paths(
+    config_dir: str | Path,
+    set_name: str | None = None,
+) -> dict[str, Any]:
     """Load `paths.json` and resolve platform-specific roots.
 
     Returns a dict with the following resolved absolute paths on top of the
@@ -63,6 +66,11 @@ def load_paths(config_dir: str | Path) -> dict[str, Any]:
         project_dir: drive_root / project_subdir
         runs_dir:    project_dir / runs_subdir
         data_dir:    project_dir / data_subdir
+
+    When ``set_name`` is given (e.g. ``"set-1"``), two extra paths are added:
+
+        set_project_dir: project_dir / set_name  (synthetic data + artifacts)
+        set_runs_dir:    project_dir / set_name / runs_subdir
 
     On Colab, `paths.json` is optional: if absent, the function falls back to
     the committed `paths.example.json`. This works because `drive_root_colab`
@@ -96,7 +104,7 @@ def load_paths(config_dir: str | Path) -> dict[str, Any]:
     runs_dir = project_dir / raw["runs_subdir"]
     data_dir = project_dir / raw["data_subdir"]
 
-    return {
+    result = {
         **raw,
         "runtime": runtime,
         "drive_root": str(Path(drive_root)),
@@ -105,10 +113,32 @@ def load_paths(config_dir: str | Path) -> dict[str, Any]:
         "data_dir": str(data_dir),
     }
 
+    if set_name is not None:
+        set_project_dir = project_dir / set_name
+        set_runs_dir = set_project_dir / raw["runs_subdir"]
+        result["set_name"] = set_name
+        result["set_project_dir"] = str(set_project_dir)
+        result["set_runs_dir"] = str(set_runs_dir)
 
-def load_dataset_cfg(config_dir: str | Path) -> dict[str, Any]:
-    """Load `dataset.json` (MATLAB generator inputs). No profile logic."""
-    return _strip_docs(_read_json(Path(config_dir) / "dataset.json"))
+    return result
+
+
+def load_dataset_cfg(
+    config_dir: str | Path,
+    set_name: str | None = None,
+) -> dict[str, Any]:
+    """Load dataset generation parameters.
+
+    When ``set_name`` is given (e.g. ``"set-1"``), reads
+    ``config/sets/set-1.json``. Otherwise falls back to the legacy
+    ``config/dataset.json`` for backward compatibility.
+    """
+    config_dir = Path(config_dir)
+    if set_name is not None:
+        path = config_dir / "sets" / f"{set_name}.json"
+    else:
+        path = config_dir / "dataset.json"
+    return _strip_docs(_read_json(path))
 
 
 def load_training_cfg(
@@ -155,14 +185,18 @@ def load_inference_cfg(config_dir: str | Path) -> dict[str, Any]:
 def load_all(
     config_dir: str | Path,
     profile: str | None = None,
+    set_name: str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     """Convenience: load all four configs in one call.
+
+    When ``set_name`` is given, paths and dataset_cfg are resolved for that
+    set (per-set Drive subdirectory and ``config/sets/<set_name>.json``).
 
     Returns (paths, dataset_cfg, training_cfg, inference_cfg).
     """
     return (
-        load_paths(config_dir),
-        load_dataset_cfg(config_dir),
+        load_paths(config_dir, set_name=set_name),
+        load_dataset_cfg(config_dir, set_name=set_name),
         load_training_cfg(config_dir, profile=profile),
         load_inference_cfg(config_dir),
     )

@@ -31,7 +31,15 @@ addpath(thisDir);  % ensure load_config is discoverable
 
 cfgPaths = load_config('paths');
 cfgInf   = load_config('inference');
-cfgDS    = load_config('dataset');
+
+% Per-set support: inference.json now has an optional set_name field.
+if isfield(cfgInf, 'set_name') && ~isempty(cfgInf.set_name)
+    setName = char(cfgInf.set_name);
+    cfgDS = load_config(['sets/' setName]);
+else
+    setName = '';
+    cfgDS = load_config('dataset');
+end
 
 runName  = char(cfgInf.runName);
 baseName = char(cfgInf.spectrum_basename);
@@ -50,18 +58,24 @@ dBThrDefault = double(cfgDS.dB_thr_G);  % authoritative narrow/wide threshold
 %     dyson_cnn.infer.predict_real_spectrum on Colab or Mac)
 %   - the fit overlay PNG is written to the Drive project folder
 driveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
-runDir          = fullfile(driveProjectDir, char(cfgPaths.runs_subdir), runName);
-dataDir         = fullfile(repoRoot, 'data');
+if ~isempty(setName)
+    driveSetDir = fullfile(driveProjectDir, setName);
+    dataDir     = fullfile(repoRoot, 'data', setName);
+else
+    driveSetDir = driveProjectDir;
+    dataDir     = fullfile(repoRoot, 'data');
+end
+runDir = fullfile(driveSetDir, char(cfgPaths.runs_subdir), runName);
 
 dtaFile  = fullfile(dataDir, [baseName '.DTA']);
 
-predJson = fullfile(driveProjectDir, strcat(baseName, '_real_predicted_params.json'));
+predJson = fullfile(driveSetDir, strcat(baseName, '_real_predicted_params.json'));
 metaJson = fullfile(runDir, 'model_meta.json');
 
 bCsv = fullfile(runDir, 'B_axis.csv');
 bNpy = fullfile(runDir, 'B_axis.npy');
 
-outPng = fullfile(driveProjectDir, [baseName '_cnn_fit.png']);
+outPng = fullfile(driveSetDir, [baseName '_cnn_fit.png']);
 
 %% --- Sanity checks ---
 if ~isfile(dtaFile);  error('DTA not found: %s', dtaFile); end

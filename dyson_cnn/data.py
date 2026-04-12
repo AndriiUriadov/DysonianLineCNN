@@ -120,6 +120,10 @@ def load_dataset(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict[str, Any]]:
     """Load the synthetic dataset from the resolved Drive project directory.
 
+    When ``paths`` contains a ``set_project_dir`` key (created by
+    ``load_paths(set_name=...)``), dataset files are read from that
+    per-set subdirectory. Otherwise falls back to ``project_dir``.
+
     Args:
         paths: result of `config.load_paths()`, must have `project_dir`.
         dataset_cfg: result of `config.load_dataset_cfg()`, must have `Prefix`.
@@ -130,7 +134,7 @@ def load_dataset(
         MATLAB-produced `meta_mix_<prefix>.json` dict (generator metadata
         snapshot at generation time).
     """
-    project_dir = Path(paths["project_dir"])
+    project_dir = Path(paths.get("set_project_dir", paths["project_dir"]))
     prefix = dataset_cfg["Prefix"]
 
     x_path = project_dir / f"X_dyson_mix_{prefix}.npy"

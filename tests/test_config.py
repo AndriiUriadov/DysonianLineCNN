@@ -188,3 +188,57 @@ def test_doc_fields_are_stripped(config_dir):
     assert "_doc" not in ds
     tr = load_training_cfg(config_dir)
     assert "_doc" not in tr
+
+
+# ---------------------------------------------------------------------------
+# Per-set config loading
+# ---------------------------------------------------------------------------
+
+
+def test_load_dataset_cfg_with_set_name(config_dir):
+    """load_dataset_cfg(set_name='set-1') should read config/sets/set-1.json."""
+    ds = load_dataset_cfg(config_dir, set_name="set-1")
+    assert ds["Npoints"] == 4096, "Npoints must stay 4096"
+    assert ds["N"] > 0
+    assert len(ds["B0Range_G"]) == 2
+
+
+def test_load_dataset_cfg_without_set_name_falls_back_to_legacy(config_dir):
+    """Without set_name, load_dataset_cfg reads config/dataset.json (legacy)."""
+    ds = load_dataset_cfg(config_dir)
+    assert ds["Npoints"] == 4096
+    # Legacy config has dBRange [250, 350]
+    assert ds["dBRange_G"] == [250, 350]
+
+
+def test_load_dataset_cfg_nonexistent_set_raises(config_dir):
+    with pytest.raises(FileNotFoundError):
+        load_dataset_cfg(config_dir, set_name="set-99")
+
+
+def test_load_paths_with_set_name_adds_set_paths(config_dir):
+    paths = load_paths(config_dir, set_name="set-1")
+    assert "set_project_dir" in paths
+    assert "set_runs_dir" in paths
+    assert "set_name" in paths
+    assert paths["set_name"] == "set-1"
+    assert "set-1" in paths["set_project_dir"]
+    assert "set-1" in paths["set_runs_dir"]
+
+
+def test_load_paths_without_set_name_has_no_set_paths(config_dir):
+    paths = load_paths(config_dir)
+    assert "set_project_dir" not in paths
+    assert "set_runs_dir" not in paths
+
+
+def test_load_all_with_set_name(config_dir):
+    paths, ds, tr, inf = load_all(config_dir, set_name="set-1")
+    assert "set_project_dir" in paths
+    assert ds["Npoints"] == 4096
+
+
+def test_inference_cfg_has_set_name(config_dir):
+    inf = load_inference_cfg(config_dir)
+    assert "set_name" in inf
+    assert inf["set_name"] == "set-1"
