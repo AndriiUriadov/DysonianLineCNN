@@ -204,32 +204,62 @@ a = coef(1);
 b = coef(2);
 yFit = a*ySim + b;
 
-%% 10) --- Plot + save --- 
-fig = figure('Color','w','Name','Experimental vs CNN reconstructed');
+%% 10) --- Compute g-factor ---
+muB = 9.2740100783e-24;
+h   = 6.62607015e-34;
+
+% Read mwFreq from DSC
+mwFreqGHz = 9.86;
+got_mwFreqGHz = false;
+dscPath = fullfile(dataDir, [baseName '.DSC']);
+if isfile(dscPath)
+    txt = fileread(dscPath);
+    freqPattern = regexp(txt, 'FrequencyMon\s+([\d\.Ee\+\-]+)\s*GHz', 'tokens', 'once');
+    if ~isempty(freqPattern)
+        mwFreqGHz = str2double(freqPattern{1});
+        got_mwFreqGHz = true;
+    end
+end
+g_est = (h*(mwFreqGHz*1e9)) / (muB*(B0*1e-4));
+
+%% 11) --- Plot + save (same format as FitMatlab/FitEasyspin) ---
+fig = figure('Visible','off','Color','w','Position',[140 180 1000 540]);
 ax = axes(fig);
-ax.Color = 'w';          
-ax.XColor = 'k';         
+ax.Color = 'w';
+ax.XColor = 'k';
 ax.YColor = 'k';
-ax.GridColor = [0.8 0.8 0.8]; 
+ax.GridColor = [0.8 0.8 0.8];
 grid(ax,'on'); hold(ax,'on');
 
-
-plot(B, yExp, 'g', 'LineWidth', 1); hold on;
-plot(B, yFit, 'r', 'LineWidth', 1);
-grid on;
-
-title(sprintf('%s | B0=%.2f G, dB=%.2f G, p=%.4f | %s', baseName, B0, dB, p3, modeStr), ...
-      'Interpreter','none');
+plot(B, yExp, 'g-', 'LineWidth', 1.0);
+plot(B, yFit, 'r-', 'LineWidth', 1.2);
 xlabel('Magnetic field B (G)');
 ylabel('dI/dB (a.u.)');
 
-lgd.Color = 'w';       
-lgd.TextColor = 'k';   
-lgd.EdgeColor = 'k';   
-legend('Experimental', 'Reconstructed from CNN params', ...
-       'Location','southwest');
+if ~isempty(setName)
+    prefix = [setName '/' baseName];
+else
+    prefix = baseName;
+end
 
-exportgraphics(gcf, outPng, 'Resolution', 200);
+if got_mwFreqGHz
+    titleStr = sprintf('%s | B0=%.2f G, dB=%.2f G, p=%.3f | g=%.5f', ...
+        prefix, B0, dB, p3, g_est);
+else
+    titleStr = sprintf('%s | B0=%.2f G, dB=%.2f G, p=%.3f', ...
+        prefix, B0, dB, p3);
+end
+
+t = title(ax, titleStr, 'FontWeight','bold', 'Interpreter','none');
+t.Color = 'k';
+
+lgd = legend(ax, 'Experimental', 'CNN fit', 'Location','best');
+lgd.Color = 'w';
+lgd.TextColor = 'k';
+lgd.EdgeColor = 'k';
+
+saveas(fig, outPng);
+close(fig);
 fprintf('Saved: %s\n', outPng);
 
 %% ========================= Local functions =========================
