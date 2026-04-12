@@ -18,8 +18,8 @@
   "BaselineOffsetRange": [-0.01, 0.01],
   "BaselineSlopeRange": [-0.02, 0.02],
   "BaselineQuadRange": [-0.01, 0.01],
-  "BScaleRange": [0.998, 1.002],
-  "BOffsetRange_G": [-5, 5],
+  "BScaleRange": [1.0, 1.0],
+  "BOffsetRange_G": [0, 0],
 
   "SpikeProb": 0.0,
   "SpikeCountRange": [1, 2],
