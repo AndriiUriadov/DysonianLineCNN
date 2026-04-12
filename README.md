@@ -56,13 +56,27 @@ requiring an independent CNN model. The workflow for each set:
 | [tests/](tests/) | 49 pytest tests |
 | [results/](results/) | Summary CSVs and comparison tables (committed); per-spectrum JSON/PNG (local) |
 | [data/](data/) | Raw experimental Bruker spectra in `set-1/` through `set-5/` (not in git) |
-| [latex/](latex/) | LaTeX report with fit overlays for all 180 spectra |
-| [Analysis.md](Analysis.md) | Full analysis: CNN metrics, method comparison, conclusions |
-| [Documentation/](Documentation/) | Reference papers, BibTeX, architecture diagrams |
 
 Data (`.npy`, `.DTA`, `.DSC`) and training artifacts (`runs/`) are **not**
 stored in git — they live on Google Drive and are accessed via Drive for
 Desktop on Mac or `google.colab.drive.mount` in Colab.
+
+## Example results
+
+Sample outputs from processing all 180 experimental spectra across 5 sets
+(MATLAB, EasySpin, and CNN fit overlays, parity plots, loss curves):
+
+[**View results on Google Drive**](https://drive.google.com/drive/folders/1wRbYo90H6e9iGxK2dmwY1a97YAnGb8OC?usp=share_link)
+
+The folder contains per-set subdirectories with:
+- **Trained CNN models** (`runs/<stamp>/cnn_model.keras`, `model_meta.json`,
+  `y_min.npy`, `y_max.npy`, `B_axis.csv`)
+- **Parity plots** — true vs. predicted scatter with R² and MAE for each
+  output head (B0, dB, p)
+- **Loss curves** — training/validation loss with zoomed tail
+- **Fit overlays** — per-spectrum PNG comparing experimental (green) and
+  reconstructed (red) curves for each method
+- **Prediction JSONs** — CNN-predicted B0, dB, p for each real spectrum
 
 ## Run directory contents
 
