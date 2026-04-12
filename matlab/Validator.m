@@ -242,13 +242,8 @@ else
     prefix = baseName;
 end
 
-if got_mwFreqGHz
-    titleStr = sprintf('%s | B0=%.2f G, dB=%.2f G, p=%.3f | g=%.5f', ...
-        prefix, B0, dB, p3, g_est);
-else
-    titleStr = sprintf('%s | B0=%.2f G, dB=%.2f G, p=%.3f', ...
-        prefix, B0, dB, p3);
-end
+titleStr = sprintf('%s | B0=%.2f G, dB=%.2f G, p=%.3f', ...
+    prefix, B0, dB, p3);
 
 t = title(ax, titleStr, 'FontWeight','bold', 'Interpreter','none');
 t.Color = 'k';

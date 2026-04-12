@@ -196,13 +196,8 @@ plot(Bb, yb, 'g-', 'LineWidth', 1.0);
 plot(Bb, yfit, 'r-', 'LineWidth', 1.2);
 xlabel('Magnetic field B (G)'); ylabel('dI/dB (a.u.)');
 
-if got_mwFreqGHz
-    titleStr = sprintf('%s/%s | B0=%.2f G, dB=%.2f G, p=%.3f | g=%.5f', ...
-        setName, spectrumId, B0, dB, p, g_est);
-else
-    titleStr = sprintf('%s/%s | B0=%.2f G, dB=%.2f G, p=%.3f', ...
-        setName, spectrumId, B0, dB, p);
-end
+titleStr = sprintf('%s/%s | B0=%.2f G, dB=%.2f G, p=%.3f', ...
+    setName, spectrumId, B0, dB, p);
 
 title(ax, titleStr, 'FontWeight','bold', 'Interpreter','none', 'Color','k');
 
