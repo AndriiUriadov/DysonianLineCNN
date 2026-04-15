@@ -177,11 +177,11 @@ def predict_for_set(
     run_name = run_name or inf_cfg["runName"]
     basename = spectrum_basename or inf_cfg["spectrum_basename"]
 
-    set_project_dir = Path(paths["set_project_dir"])
+    set_cnn_dir = Path(paths["set_cnn_dir"])
     run_dir = Path(paths["set_runs_dir"]) / run_name
-    spectrum_csv = set_project_dir / f"{basename}_spectrum.csv"
-    out_json = set_project_dir / f"{basename}_real_predicted_params.json"
-    out_png = set_project_dir / f"{basename}_spectrum_preview.png"
+    spectrum_csv = set_cnn_dir / f"{basename}_spectrum.csv"
+    out_json = set_cnn_dir / f"{basename}_predicted.json"
+    out_png = set_cnn_dir / f"{basename}_spectrum_preview.png"
 
     return predict_real_spectrum(
         run_dir=run_dir,

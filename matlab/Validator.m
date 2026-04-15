@@ -22,13 +22,13 @@
 %    config/dataset.json) for dB_thr_G (narrow/wide mode threshold).
 %
 %  INPUT
-%    data/<set_name>/<basename>.DTA               — raw Bruker spectrum
-%    <Drive>/<set_name>/runs/<runName>/B_axis.csv  — CNN magnetic field axis
-%    <Drive>/<set_name>/runs/<runName>/model_meta.json — training metadata
-%    <Drive>/<set_name>/<basename>_real_predicted_params.json — CNN output
+%    data/<set_name>/<basename>.DTA                                  — raw Bruker spectrum
+%    <Drive>/results/<set_name>/cnn/runs/<runName>/B_axis.csv        — CNN magnetic field axis
+%    <Drive>/results/<set_name>/cnn/runs/<runName>/model_meta.json   — training metadata
+%    <Drive>/results/<set_name>/cnn/<basename>_predicted.json        — CNN output
 %
 %  OUTPUT
-%    <Drive>/<set_name>/<basename>_cnn_fit.png — overlay plot
+%    <Drive>/results/<set_name>/cnn/<basename>_cnn_fit.png — overlay plot
 %      Title: set-N/id | B0=... G, dB=... G, p=...
 %      Green = experimental, Red = CNN reconstruction
 %
@@ -73,16 +73,17 @@ end
 dBThrDefault = double(cfgDS.dB_thr_G);  % authoritative narrow/wide threshold
 
 %% -------- Resolve paths --------
-% Convention in the new architecture:
-%   - raw Bruker .DTA/.DSC live in the LOCAL repo data/ (script-relative)
-%   - trained runs live on Drive under <project>/<runs_subdir>/<runName>/
-%   - predicted params JSON lives in the Drive project folder top level,
-%     next to the input <baseName>_spectrum.csv (produced by
-%     dyson_cnn.infer.predict_real_spectrum on Colab or Mac)
-%   - the fit overlay PNG is written to the Drive project folder
+% Convention in the current architecture:
+%   - raw Bruker .DTA/.DSC live in the LOCAL repo data/<set>/ (script-relative)
+%   - trained runs live on Drive under
+%     <project>/results/<set>/cnn/<runs_subdir>/<runName>/
+%   - predicted params JSON is written by dyson_cnn.infer.predict_for_set to
+%     <project>/results/<set>/cnn/<baseName>_predicted.json
+%   - the fit overlay PNG is written to
+%     <project>/results/<set>/cnn/<baseName>_cnn_fit.png
 driveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
 if ~isempty(setName)
-    driveSetDir = fullfile(driveProjectDir, setName);
+    driveSetDir = fullfile(driveProjectDir, 'results', setName, 'cnn');
     dataDir     = fullfile(repoRoot, 'data', setName);
 else
     driveSetDir = driveProjectDir;
@@ -92,7 +93,7 @@ runDir = fullfile(driveSetDir, char(cfgPaths.runs_subdir), runName);
 
 dtaFile  = fullfile(dataDir, [baseName '.DTA']);
 
-predJson = fullfile(driveSetDir, strcat(baseName, '_real_predicted_params.json'));
+predJson = fullfile(driveSetDir, strcat(baseName, '_predicted.json'));
 metaJson = fullfile(runDir, 'model_meta.json');
 
 bCsv = fullfile(runDir, 'B_axis.csv');

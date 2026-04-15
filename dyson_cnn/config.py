@@ -67,10 +67,17 @@ def load_paths(
         runs_dir:    project_dir / runs_subdir
         data_dir:    project_dir / data_subdir
 
-    When ``set_name`` is given (e.g. ``"set-1"``), two extra paths are added:
+    When ``set_name`` is given (e.g. ``"set-1"``), extra paths are added,
+    all rooted under ``project_dir/results/<set_name>/cnn/``:
 
-        set_project_dir: project_dir / set_name  (synthetic data + artifacts)
-        set_runs_dir:    project_dir / set_name / runs_subdir
+        set_name:        the set identifier
+        set_cnn_dir:     project_dir / results / <set> / cnn
+                         (per-spectrum inputs/outputs: CSV, JSON, PNG)
+        set_runs_dir:    project_dir / results / <set> / cnn / runs
+                         (trained CNN models saved here)
+        set_dataset_dir: project_dir / results / <set> / cnn / dataset
+                         (synthetic training data from DysonGeneratorMix)
+        set_project_dir: alias of set_cnn_dir (legacy name, still exposed)
 
     On Colab, `paths.json` is optional: if absent, the function falls back to
     the committed `paths.example.json`. This works because `drive_root_colab`
@@ -114,11 +121,18 @@ def load_paths(
     }
 
     if set_name is not None:
-        set_project_dir = project_dir / set_name
-        set_runs_dir = set_project_dir / raw["runs_subdir"]
+        # New layout (April 2026): all per-set outputs consolidated under
+        # results/<set>/cnn/ on both local repo and Drive.
+        set_cnn_dir = project_dir / "results" / set_name / "cnn"
+        set_runs_dir = set_cnn_dir / raw["runs_subdir"]
+        set_dataset_dir = set_cnn_dir / "dataset"
         result["set_name"] = set_name
-        result["set_project_dir"] = str(set_project_dir)
+        result["set_cnn_dir"] = str(set_cnn_dir)
         result["set_runs_dir"] = str(set_runs_dir)
+        result["set_dataset_dir"] = str(set_dataset_dir)
+        # Legacy alias — kept so older callers reading set_project_dir
+        # still get a meaningful path (the per-set CNN working directory).
+        result["set_project_dir"] = str(set_cnn_dir)
 
     return result
 

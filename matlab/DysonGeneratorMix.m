@@ -26,7 +26,7 @@
 %      - Per-set mode:  config/sets/<SetName>.json
 %      - Legacy mode:   config/dataset.json
 %    Output directory resolved from config/paths.json.
-%    Per-set output goes to <DriveProjectDir>/<SetName>/.
+%    Per-set output goes to <DriveProjectDir>/results/<SetName>/cnn/dataset/.
 %
 %  PHYSICS MODEL
 %    Feher-Kip Dysonian derivative with full two-term A/D coefficients
@@ -212,12 +212,12 @@ y = zeros(N, 3, 'single');
 %% --------------------- Output paths ---------------------
 % Output directory handling:
 % If OutDir is empty (the default), resolve from config/paths.json to the
-% Drive project folder. When SetName is provided, output goes to a per-set
-% subdirectory: <DriveProjectDir>/<SetName>/.
+% Drive project folder. When SetName is provided, output goes to the
+% per-set dataset directory: <DriveProjectDir>/results/<SetName>/cnn/dataset/.
 DriveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
 if isempty(outDir)
     if ~isempty(SetName)
-        outDir = fullfile(DriveProjectDir, SetName);
+        outDir = fullfile(DriveProjectDir, 'results', SetName, 'cnn', 'dataset');
     else
         outDir = DriveProjectDir;
     end
@@ -225,7 +225,7 @@ elseif ~exist(outDir,'dir')
     warning('outDir does not exist: %s\nSaving to Drive project folder: %s', ...
             outDir, DriveProjectDir);
     if ~isempty(SetName)
-        outDir = fullfile(DriveProjectDir, SetName);
+        outDir = fullfile(DriveProjectDir, 'results', SetName, 'cnn', 'dataset');
     else
         outDir = DriveProjectDir;
     end

@@ -23,12 +23,12 @@
 %      drive_root_mac, project_subdir, runs_subdir
 %
 %  INPUT
-%    data/<set_name>/<spectrum_basename>.DTA  — raw Bruker spectrum
-%    <Drive>/<set_name>/runs/<runName>/B_axis.csv — CNN magnetic field axis
+%    data/<set_name>/<spectrum_basename>.DTA                                  — raw Bruker spectrum
+%    <Drive>/results/<set_name>/cnn/runs/<runName>/B_axis.csv                  — CNN magnetic field axis
 %
 %  OUTPUT
-%    <Drive>/<set_name>/<spectrum_basename>_spectrum.csv      — 4096x1 CSV
-%    <Drive>/<set_name>/<spectrum_basename>_spectrum_preview.png — preview
+%    <Drive>/results/<set_name>/cnn/<spectrum_basename>_spectrum.csv          — 4096x1 CSV
+%    <Drive>/results/<set_name>/cnn/<spectrum_basename>_spectrum_preview.png  — preview
 %
 %  RESAMPLING
 %    Linear interpolation inside the measured Bruker sweep window.
@@ -64,12 +64,13 @@ end
 
 driveProjectDir = fullfile(cfgPaths.drive_root_mac, cfgPaths.project_subdir);
 if ~isempty(setName)
-    driveSetDir = fullfile(driveProjectDir, setName);
+    % New layout: <project>/results/<set>/cnn/ holds all per-set CNN data
+    driveSetDir = fullfile(driveProjectDir, 'results', setName, 'cnn');
 else
     driveSetDir = driveProjectDir;
 end
 fprintf("[INFO] Repo root        : %s\n", repoRoot);
-fprintf("[INFO] Drive project dir: %s\n", driveSetDir);
+fprintf("[INFO] Drive CNN dir    : %s\n", driveSetDir);
 
 %% === 1) RESOLVE INPUTS FROM CONFIG ===
 runName = string(cfgInf.runName);

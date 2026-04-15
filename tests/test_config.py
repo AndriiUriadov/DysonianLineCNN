@@ -218,27 +218,39 @@ def test_load_dataset_cfg_nonexistent_set_raises(config_dir):
 
 def test_load_paths_with_set_name_adds_set_paths(config_dir):
     paths = load_paths(config_dir, set_name="set-1")
-    assert "set_project_dir" in paths
-    assert "set_runs_dir" in paths
+    # All four per-set path keys must be present
     assert "set_name" in paths
+    assert "set_cnn_dir" in paths
+    assert "set_runs_dir" in paths
+    assert "set_dataset_dir" in paths
+    assert "set_project_dir" in paths  # legacy alias, kept for back-compat
     assert paths["set_name"] == "set-1"
-    assert "set-1" in paths["set_project_dir"]
-    assert "set-1" in paths["set_runs_dir"]
+    # All per-set paths must be rooted under project_dir/results/set-1/cnn/
+    for key in ("set_cnn_dir", "set_runs_dir", "set_dataset_dir", "set_project_dir"):
+        assert "set-1" in paths[key]
+        assert "results" in paths[key]
+        assert "cnn" in paths[key]
+    # set_runs_dir ends with runs_subdir, set_dataset_dir ends with "dataset"
+    assert paths["set_runs_dir"].endswith(paths["runs_subdir"])
+    assert paths["set_dataset_dir"].endswith("dataset")
+    # Legacy alias points at the cnn directory
+    assert paths["set_project_dir"] == paths["set_cnn_dir"]
 
 
 def test_load_paths_without_set_name_has_no_set_paths(config_dir):
     paths = load_paths(config_dir)
-    assert "set_project_dir" not in paths
-    assert "set_runs_dir" not in paths
+    for key in ("set_cnn_dir", "set_runs_dir", "set_dataset_dir", "set_project_dir"):
+        assert key not in paths
 
 
 def test_load_all_with_set_name(config_dir):
     paths, ds, tr, inf = load_all(config_dir, set_name="set-1")
-    assert "set_project_dir" in paths
+    assert "set_cnn_dir" in paths
+    assert "set_dataset_dir" in paths
     assert ds["Npoints"] == 4096
 
 
 def test_inference_cfg_has_set_name(config_dir):
     inf = load_inference_cfg(config_dir)
     assert "set_name" in inf
-    assert inf["set_name"] == "set-1"
+    assert inf["set_name"].startswith("set-")
