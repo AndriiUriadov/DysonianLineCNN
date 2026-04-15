@@ -55,8 +55,6 @@ requiring an independent CNN model. The workflow for each set:
 | [notebooks/](notebooks/) | Thin Colab/Mac notebooks with `SET_NAME` variable |
 | [tests/](tests/) | 49 pytest tests |
 | [results/](results/) | Summary CSVs and comparison tables (committed); per-spectrum JSON/PNG (local) |
-| [scripts/](scripts/) | Figure generation scripts (e.g. `figure6_comparison.py`) |
-| [figures/](figures/) | Generated publication figures (final only; `temp/` gitignored) |
 | [data/](data/) | Raw experimental Bruker spectra in `set-1/` through `set-5/` (not in git) |
 
 Data (`.npy`, `.DTA`, `.DSC`) and training artifacts (trained CNN models
