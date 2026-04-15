@@ -7,11 +7,15 @@ function cfg = load_config(name)
 %
 %   Inputs:
 %       name   - config basename without extension, e.g. 'paths',
-%                'dataset', 'training', 'inference'.
+%                'dataset', 'training', 'inference', or a path relative
+%                to config/ such as 'sets/set-1' for per-set configs.
 %
 %   Example:
 %       ds = load_config('dataset');
 %       fprintf('N = %d\n', ds.N);
+%
+%       % Per-set dataset config:
+%       ds = load_config('sets/set-1');
 %
 %   Notes:
 %       - JSON field names that are not valid MATLAB identifiers (e.g.
