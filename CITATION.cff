@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 title: "DysonianLineCNN: 1D CNN for Dysonian EPR Line Parameter Extraction"
-message: "If you use this software, please cite it as below."
+message: "If you use this software or data, please cite it as below."
 type: software
 authors:
   - given-names: Andrii V.
@@ -10,7 +10,10 @@ authors:
     family-names: Savchenko
     affiliation: "National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute'"
 repository-code: "https://github.com/AndriiUriadov/DysonianLineCNN"
-license: MIT
+license:
+  - MIT
+  - CC-BY-4.0
+license-url: "https://github.com/AndriiUriadov/DysonianLineCNN/blob/main/LICENSE"
 version: "1.0.0"
 date-released: "2026-04-12"
 keywords:

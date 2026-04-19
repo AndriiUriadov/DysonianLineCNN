@@ -401,12 +401,22 @@ parameter ranges determined from the classical baseline fits. See
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This repository uses a dual-license model:
 
-If you use this software in your research, please cite it:
+- **Source code** (Python, MATLAB, configuration files) —
+  [MIT License](LICENSE)
+- **Research data and documentation** (experimental spectra, trained models,
+  fit results, per-set configs) —
+  [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+
+See [LICENSE](LICENSE) for the full text of both licenses.
+
+### Citation
+
+If you use this software or data in your research, please cite:
 
 > A.V. Uriadov, D.V. Savchenko, "DysonianLineCNN: 1D CNN for Dysonian EPR
-> Line Parameter Extraction," 2026. https://github.com/AndriiUriadov/DysonianLineCNN
+> Line Parameter Extraction," 2026.
 
 See [CITATION.cff](CITATION.cff) for the machine-readable citation format
 (GitHub renders a "Cite this repository" button automatically).
