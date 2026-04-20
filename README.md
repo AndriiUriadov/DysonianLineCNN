@@ -2,15 +2,24 @@
 
 A hybrid MATLAB + Python pipeline for extracting Dysonian EPR line parameters
 (`B0`, `dB`, `p`) from first-derivative EPR spectra. Three methods are
-compared on 180 experimental spectra across 5 independent datasets:
+compared on 195 experimental spectra across 6 independent datasets:
 
-1. **MATLAB optimizer** — `lsqnonlin` with Feher-Kip Dysonian model
-2. **EasySpin esfit** — Levenberg-Marquardt, two-step approach
+1. **MATLAB optimizer** — `lsqnonlin` with geometry-aware Dysonian model
+2. **EasySpin esfit** — geometry-aware optimizer dispatch (Levenberg-Marquardt
+   two-step for plate; Nelder-Mead simplex single-step for sphere)
 3. **1D Residual CNN** — trained on synthetic spectra, predicts parameters
    directly from the normalized spectrum shape
 
-All three methods use the same physical model with the full two-term A/D
-coefficients (Holiatkina et al., *J. Appl. Phys.* **134**, 145702, 2023).
+Two physical models with the full two-term A/D coefficients are supported:
+
+- **Plate (Feher-Kip)** — Holiatkina et al., *J. Appl. Phys.* **134**,
+  145702 (2023). Used for sets 1–5 (bulk/film samples).
+- **Sphere (powder grains)** — Savchenko et al., *J. Phys. Chem. Solids*
+  **162**, 110536 (2022). Used for set-6 (CDs@SiO₂ nanocomposites).
+
+Geometry is a single switch in the per-set config (`"geometry": "plate"` or
+`"sphere"`) propagated through generator, validator, and both classical
+fitters.
 
 **Authors:** A.V. Uriadov, D.V. Savchenko — National Technical University of
 Ukraine "Igor Sikorsky Kyiv Polytechnic Institute".
@@ -55,7 +64,7 @@ requiring an independent CNN model. The workflow for each set:
 | [notebooks/](notebooks/) | Thin Colab/Mac notebooks with `SET_NAME` variable |
 | [tests/](tests/) | 49 pytest tests |
 | [results/](results/) | Summary CSVs and comparison tables (committed); per-spectrum JSON/PNG (local) |
-| [data/](data/) | Raw experimental Bruker spectra in `set-1/` through `set-5/` (not in git) |
+| [data/](data/) | Raw experimental Bruker spectra in `set-1/` through `set-6/` (not in git) |
 
 Data (`.npy`, `.DTA`, `.DSC`) and training artifacts (trained CNN models
 under `results/set-N/cnn/runs/<stamp>/`) are **not** stored in git — they
@@ -87,7 +96,7 @@ a `data/` mirror:
 
 ## Example results
 
-Sample outputs from processing all 180 experimental spectra across 5 sets
+Sample outputs from processing all 195 experimental spectra across 6 sets
 (MATLAB, EasySpin, and CNN fit overlays, parity plots, loss curves):
 
 [**View results on Google Drive**](https://drive.google.com/drive/folders/1wRbYo90H6e9iGxK2dmwY1a97YAnGb8OC?usp=share_link)
@@ -151,9 +160,15 @@ Each set has an independent CNN model trained on set-specific synthetic data.
 | set-3 | `20260412_135545` | 53 | 0.67 | 0.51 | 0.021 |
 | set-4 | `20260412_141449` | 80 | 0.56 | 0.77 | 0.022 |
 | set-5 | `20260412_143406` | 39 | 0.80 | 0.33 | 0.015 |
+| set-6 | `20260420_183721` | 15 | 0.17 | 0.09 | 0.080 |
 
-All models: 691,283 parameters, `colab_full` profile, R² > 0.998 on all heads.
-See [Analysis.md](Analysis.md) for the full three-method comparison.
+Set-6 uses sphere geometry; sets 1–5 use plate. All models have 691,283
+parameters on the `colab_full` profile. Test-split R² is above 0.998 for
+every head on sets 1–5; on set-6 R² is 0.997 for B₀ and ΔB and 0.984 for
+p, slightly lower because the $p$ training range was widened to
+$[1.0,\,5.0]$ to cover the saturated-skin regime.
+See the compiled LaTeX report on Google Drive for the full three-method
+comparison.
 
 ## Getting started
 
@@ -392,8 +407,12 @@ parameter ranges determined from the classical baseline fits. See
   the set. Use `eprload` to check B ranges before generation.
 - **BOffsetRange_G** and **BScaleRange** should be `[0,0]` and `[1,1]`
   respectively — field calibration augmentation degrades B0 accuracy.
-- All Dyson model formulas use the full two-term A/D coefficients from
-  Holiatkina et al. (2023). Verify consistency if modifying any fitter.
+- All Dyson model formulas use the full two-term A/D coefficients. Plate
+  geometry follows Holiatkina et al. (2023); sphere geometry follows
+  Savchenko et al. (2022). The geometry is selected by the `"geometry"`
+  field in the per-set config and propagated to the generator, the
+  validator, and both classical fitters. Verify consistency in all four
+  places if modifying any formula.
 
 ### Further reading
 
