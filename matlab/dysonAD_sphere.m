@@ -1,6 +1,7 @@
 function [Acoef, Dcoef] = dysonAD_sphere(p)
 %% ========================================================================
 %  dysonAD_sphere — Dysonian A and D coefficients for SPHERICAL particles
+%                   (powder grain geometry, Savchenko et al. 2022, Eq. 3)
 %
 %  Authors:  A.V. Uriadov, D.V. Savchenko
 %  National Technical University of Ukraine
