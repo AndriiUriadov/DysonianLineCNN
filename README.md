@@ -23,12 +23,7 @@ branch the `"geometry"` field selects plate or sphere.
   Savchenko et al., *J. Phys. Chem. Solids* **162**, 110536 (2022).
   Third label is also `p`. Used for set-6 (CDs@SiO₂ nanocomposites).
 - **Wide (Joshi, modified Dyson)** — absorption model for very broad
-  lines (`dB > dB_thr_G`). Third label is the asymmetry parameter
-  `alpha` instead of `p`. Implemented in
-  [matlab/DysonGeneratorMix.m](matlab/DysonGeneratorMix.m) and enabled
-  automatically when the full `dBRange` exceeds the threshold. Not
-  used by any of sets 1–6, but the code path is tested and available
-  for future wide-line datasets.
+  lines (`dB > dB_thr_G`).
 
 The narrow geometry is a single switch in the per-set config
 (`"geometry": "plate"` or `"sphere"`) propagated through generator,
