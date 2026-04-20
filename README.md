@@ -10,16 +10,29 @@ compared on 195 experimental spectra across 6 independent datasets:
 3. **1D Residual CNN** — trained on synthetic spectra, predicts parameters
    directly from the normalized spectrum shape
 
-Two physical models with the full two-term A/D coefficients are supported:
+Three physical models are supported. The generator dispatches between the
+narrow (Dysonian) branch and the wide (Joshi) branch based on `dBRange`
+against the threshold `dB_thr_G` (default 1000 G); within the narrow
+branch the `"geometry"` field selects plate or sphere.
 
-- **Plate (Feher-Kip)** — Holiatkina et al., *J. Appl. Phys.* **134**,
-  145702 (2023). Used for sets 1–5 (bulk/film samples).
-- **Sphere (powder grains)** — Savchenko et al., *J. Phys. Chem. Solids*
-  **162**, 110536 (2022). Used for set-6 (CDs@SiO₂ nanocomposites).
+- **Narrow, plate (Feher-Kip)** — full two-term A/D coefficients,
+  Holiatkina et al., *J. Appl. Phys.* **134**, 145702 (2023). Third
+  label is the skin-effect parameter `p`. Used for sets 1–5 (bulk/film
+  samples).
+- **Narrow, sphere (powder grains)** — full two-term A/D coefficients,
+  Savchenko et al., *J. Phys. Chem. Solids* **162**, 110536 (2022).
+  Third label is also `p`. Used for set-6 (CDs@SiO₂ nanocomposites).
+- **Wide (Joshi, modified Dyson)** — absorption model for very broad
+  lines (`dB > dB_thr_G`). Third label is the asymmetry parameter
+  `alpha` instead of `p`. Implemented in
+  [matlab/DysonGeneratorMix.m](matlab/DysonGeneratorMix.m) and enabled
+  automatically when the full `dBRange` exceeds the threshold. Not
+  used by any of sets 1–6, but the code path is tested and available
+  for future wide-line datasets.
 
-Geometry is a single switch in the per-set config (`"geometry": "plate"` or
-`"sphere"`) propagated through generator, validator, and both classical
-fitters.
+The narrow geometry is a single switch in the per-set config
+(`"geometry": "plate"` or `"sphere"`) propagated through generator,
+validator, and both classical fitters.
 
 **Authors:** A.V. Uriadov, D.V. Savchenko — National Technical University of
 Ukraine "Igor Sikorsky Kyiv Polytechnic Institute".
@@ -102,6 +115,7 @@ Sample outputs from processing all 195 experimental spectra across 6 sets
 [**View results on Google Drive**](https://drive.google.com/drive/folders/1wRbYo90H6e9iGxK2dmwY1a97YAnGb8OC?usp=share_link)
 
 The folder contains per-set subdirectories with:
+
 - **Trained CNN models** (`runs/<stamp>/cnn_model.keras`, `model_meta.json`,
   `y_min.npy`, `y_max.npy`, `B_axis.csv`)
 - **Parity plots** — true vs. predicted scatter with R² and MAE for each
