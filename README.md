@@ -16,12 +16,9 @@ against the threshold `dB_thr_G` (default 1000 G); within the narrow
 branch the `"geometry"` field selects plate or sphere.
 
 - **Narrow, plate (Feher-Kip)** — full two-term A/D coefficients,
-  Holiatkina et al., *J. Appl. Phys.* **134**, 145702 (2023). Third
-  label is the skin-effect parameter `p`. Used for sets 1–5 (bulk/film
-  samples).
+  Holiatkina et al., *J. Appl. Phys.* **134**, 145702 (2023).
 - **Narrow, sphere (powder grains)** — full two-term A/D coefficients,
   Savchenko et al., *J. Phys. Chem. Solids* **162**, 110536 (2022).
-  Third label is also `p`. Used for set-6 (CDs@SiO₂ nanocomposites).
 - **Wide (Joshi, modified Dyson)** — absorption model for very broad
   lines (`dB > dB_thr_G`).
 
