@@ -5,9 +5,14 @@ function results = FitEasyspin(setName, spectrumId)
 %   setName     — e.g. 'set-1'
 %   spectrumId  — e.g. '1' (basename without .DTA)
 %
-% Uses esfit (Levenberg–Marquardt) with two-step approach:
-%   Step 1: fix p, fit B0/dBpp/A/off
-%   Step 2: fix baseline, fit B0/dBpp/p/A
+% Fit strategy depends on per-set geometry:
+%   plate  (set-1..5): esfit levmar, two-step (fix p then fit all), wing
+%                       mask. Tight bounds (dB>=5G, p<=5).
+%   sphere (set-6+)  : esfit simplex, single-step 5-param fit, no mask,
+%                       ScaleParams=true (needed for mixed magnitudes),
+%                       finite bounds (required by ScaleParams). Bounds
+%                       relaxed for nanocomposite narrow lines (dB>=1G,
+%                       p<=10).
 %
 % Output:
 %   results/set-N/easyspin/<id>_fit.json — fit parameters
@@ -28,6 +33,7 @@ spectrumId = char(spectrumId);
 %% Resolve paths
 thisDir  = fileparts(mfilename('fullpath'));
 repoRoot = fileparts(fileparts(thisDir));
+addpath(fullfile(repoRoot, 'matlab'));      % for load_config, dysonNarrow, dysonAD
 
 dataDir    = fullfile(repoRoot, 'data', setName);
 resultsDir = fullfile(repoRoot, 'results', setName, 'easyspin');
@@ -36,10 +42,21 @@ if ~exist(resultsDir, 'dir'); mkdir(resultsDir); end
 dtaFile = fullfile(dataDir, [spectrumId '.DTA']);
 assert(isfile(dtaFile), 'DTA file not found: %s', dtaFile);
 
+%% Read geometry from per-set config ('plate' default)
+geometry = 'plate';
+try
+    cfgDS = load_config(['sets/' setName]);
+    if isfield(cfgDS, 'geometry') && ~isempty(cfgDS.geometry)
+        geometry = char(cfgDS.geometry);
+    end
+catch
+    % legacy sets without per-set config: stay on 'plate' default
+end
+
 %% Load EasySpin
-if exist('esfit','file') ~= 2 || exist('eprload','file') ~= 2
+% EasySpin ships .p files (exist returns 6), not .m (returns 2).
+if exist('esfit') == 0 || exist('eprload') == 0
     error('EasySpin not found. Add it to MATLAB path: addpath(''/path/to/easyspin''); savepath;');
-    rehash toolboxcache;
 end
 
 %% Load spectrum
@@ -96,67 +113,98 @@ A_init = (ypk - ymn);
 Bstep = median(diff(Bb));
 Bmod  = min(1.0, 0.03*dBpp_init/sqrt(3));
 
-%% Bounds
-lb = [fitWin(1)+20, 5,    0.1, 0,   -Inf, -Inf, -Inf, 0.995, -10];
-ub = [fitWin(2)-20, 1000, 5.0, Inf,  Inf,  Inf,  Inf, 1.010,  10];
-
 %% Full model function (9 params)
 model_fun = @(p,Bvec) dyson_with_baseline( ...
     Bvec, p(1), p(2), p(3), p(4), p(5), p(6), p(7), ...
-    p(8), p(9), Bmod, Bstep);
+    p(8), p(9), Bmod, Bstep, geometry);
 
-%% esfit options
-FitOpt = struct();
-FitOpt.Method    = 'levmar';
-FitOpt.AutoScale = 'none';
-FitOpt.Display   = 'off';
-FitOpt.BaseLine  = 0;
-FitOpt.MaxIter   = 200;
-FitOpt.TolStep   = 1e-10;
-FitOpt.TolFun    = 1e-10;
+%% Geometry-specific fit strategy
+%
+% Plate (default, set-1..5): original levmar + two-step + wing mask approach
+% that matches the Holiatkina-style article fits. Bounds Inf-valued (levmar
+% without ScaleParams tolerates Inf).
+%
+% Sphere (set-6+): simplex + single-step + ScaleParams=true + finite bounds.
+% Needed because (a) LM was stuck in local minima at too-symmetric p~1;
+% (b) ScaleParams requires finite bounds; (c) nanocomposite narrow lines
+% need dB lower bound below 5 G.
 
-% Mask: wings only (exclude zero-crossing region)
-Bz1 = B0_init - 0.6*dBpp_init;
-Bz2 = B0_init + 0.6*dBpp_init;
-maskFit = (Bb >= (B0_init-6*dBpp_init) & Bb <= (B0_init+6*dBpp_init)) ...
-          & ~(Bb >= Bz1 & Bb <= Bz2);
-maskFit = logical(maskFit(:));
-FitOpt.Mask = maskFit;
+if strcmpi(geometry, 'sphere')
+    BIG = 1e12;
+    lb = [fitWin(1)+20, 1,    0.1,  0,    -1e6, -1e6, -1e6, 0.995, -10];
+    ub = [fitWin(2)-20, 1000, 10.0, BIG,   1e6,  1e6,  1e6, 1.010,  10];
 
-%% Step 1: fix p, fit B0/dBpp/A/off
-p_fixed = p_init;
-offMax = 0.005 * max(abs(yb));
+    FitOpt = struct();
+    FitOpt.Method        = 'simplex';
+    FitOpt.AutoScale     = 'none';
+    FitOpt.Verbosity     = 0;
+    FitOpt.BaseLine      = 0;
+    FitOpt.ScaleParams   = true;
+    FitOpt.TolFun        = 1e-6;
+    FitOpt.TolEdgeLength = 1e-4;
+    FitOpt.delta         = 0.15;
 
-esfit_fcn1 = @(u) dyson_with_baseline( ...
-    Bb, u(1), u(2), p_fixed, u(3), ...
-    u(4), 0, 0, 1.0, 0.0, Bmod, Bstep);
+    offMax = 0.01 * max(abs(yb));
+    esfit_fcn = @(u) dyson_with_baseline( ...
+        Bb, u(1), u(2), u(3), u(4), ...
+        u(5), 0, 0, 1.0, 0.0, Bmod, Bstep, geometry);
+    u0  = [B0_init, dBpp_init, p_init, A_init, 0];
+    lb0 = [lb(1), lb(2), lb(3), 0,   -offMax];
+    ub0 = [ub(1), ub(2), ub(3), BIG,  offMax];
 
-u0  = [B0_init, dBpp_init, A_init, 0];
-lb1 = [lb(1), lb(2), 0, -offMax];
-ub1 = [ub(1), ub(2), Inf, offMax];
+    fitres = esfit(yb, esfit_fcn, u0, lb0, ub0, FitOpt);
+    uf     = fitres.pfit(:).';
+    pf = [uf(1), uf(2), uf(3), uf(4), uf(5), 0, 0, 1.0, 0.0];
+    yfit = model_fun(pf, Bb);
+    B0 = pf(1); dB = pf(2); p = pf(3); A = pf(4);
 
-fit1 = esfit(yb, esfit_fcn1, u0, lb1, ub1, FitOpt);
-uf   = fit1.pfit(:).';
+else  % 'plate' (default) — original two-step levmar
+    lb = [fitWin(1)+20, 5,    0.1, 0,   -Inf, -Inf, -Inf, 0.995, -10];
+    ub = [fitWin(2)-20, 1000, 5.0, Inf,  Inf,  Inf,  Inf, 1.010,  10];
 
-B0_1 = uf(1); dBpp_1 = uf(2); A_1 = uf(3); off_1 = uf(4);
+    FitOpt = struct();
+    FitOpt.Method    = 'levmar';
+    FitOpt.AutoScale = 'none';
+    FitOpt.Verbosity = 0;
+    FitOpt.BaseLine  = 0;
+    FitOpt.MaxIter   = 200;
+    FitOpt.TolStep   = 1e-10;
+    FitOpt.TolFun    = 1e-10;
 
-%% Step 2: fix baseline, fit B0/dBpp/p/A
-esfit_fcn2 = @(q) dyson_with_baseline( ...
-    Bb, q(1), q(2), q(3), q(4), ...
-    off_1, 0, 0, 1.0, 0.0, Bmod, Bstep);
+    % Wing-only mask excludes zero-crossing region
+    Bz1 = B0_init - 0.6*dBpp_init;
+    Bz2 = B0_init + 0.6*dBpp_init;
+    maskFit = (Bb >= (B0_init-6*dBpp_init) & Bb <= (B0_init+6*dBpp_init)) ...
+              & ~(Bb >= Bz1 & Bb <= Bz2);
+    FitOpt.Mask = logical(maskFit(:));
 
-p0_step2 = min(ub(3), max(lb(3), 0.85*p_fixed));
-q0 = [B0_1, dBpp_1, p0_step2, A_1];
-lb2 = [lb(1), lb(2), lb(3), 0];
-ub2 = [ub(1), ub(2), ub(3), Inf];
+    % Step 1: fix p, fit B0/dBpp/A/off
+    p_fixed = p_init;
+    offMax = 0.005 * max(abs(yb));
+    esfit_fcn1 = @(u) dyson_with_baseline( ...
+        Bb, u(1), u(2), p_fixed, u(3), ...
+        u(4), 0, 0, 1.0, 0.0, Bmod, Bstep, geometry);
+    u0  = [B0_init, dBpp_init, A_init, 0];
+    lb1 = [lb(1), lb(2), 0, -offMax];
+    ub1 = [ub(1), ub(2), Inf, offMax];
+    fit1 = esfit(yb, esfit_fcn1, u0, lb1, ub1, FitOpt);
+    uf   = fit1.pfit(:).';
+    B0_1 = uf(1); dBpp_1 = uf(2); A_1 = uf(3); off_1 = uf(4);
 
-fit2 = esfit(yb, esfit_fcn2, q0, lb2, ub2, FitOpt);
-qf   = fit2.pfit(:).';
-
-pf = [qf(1), qf(2), qf(3), qf(4), off_1, 0, 0, 1.0, 0.0];
-yfit = model_fun(pf, Bb);
-
-B0 = pf(1); dB = pf(2); p = pf(3); A = pf(4);
+    % Step 2: fix baseline, fit B0/dBpp/p/A
+    esfit_fcn2 = @(q) dyson_with_baseline( ...
+        Bb, q(1), q(2), q(3), q(4), ...
+        off_1, 0, 0, 1.0, 0.0, Bmod, Bstep, geometry);
+    p0_step2 = min(ub(3), max(lb(3), 0.85*p_fixed));
+    q0 = [B0_1, dBpp_1, p0_step2, A_1];
+    lb2 = [lb(1), lb(2), lb(3), 0];
+    ub2 = [ub(1), ub(2), ub(3), Inf];
+    fit2 = esfit(yb, esfit_fcn2, q0, lb2, ub2, FitOpt);
+    qf   = fit2.pfit(:).';
+    pf = [qf(1), qf(2), qf(3), qf(4), off_1, 0, 0, 1.0, 0.0];
+    yfit = model_fun(pf, Bb);
+    B0 = pf(1); dB = pf(2); p = pf(3); A = pf(4);
+end
 
 %% g-factor
 muB = 9.2740100783e-24;
@@ -214,16 +262,10 @@ end
 
 %% ========================= Local functions =========================
 
-function y = dyson_with_baseline(B, B0, dBpp, p, A, off, slope, quad, Bscale, Bshift, Bmod, Bstep)
+function y = dyson_with_baseline(B, B0, dBpp, p, A, off, slope, quad, Bscale, Bshift, Bmod, Bstep, geometry)
+    if nargin < 13 || isempty(geometry); geometry = 'plate'; end
     Bcorr = Bshift + Bscale .* B;
-    x = 2*(Bcorr - B0)/(sqrt(3)*dBpp);
-
-    % Full formula with two terms (Holiatkina et al., J. Appl. Phys. 134, 125306 (2023))
-    denom1 = 2*p.*(cosh(p) + cos(p));
-    denom2 = (cosh(p) + cos(p)).^2;
-    Acoef = (sinh(p) + sin(p))./denom1 + (1 + cosh(p).*cos(p))./denom2;
-    Dcoef = (sinh(p) - sin(p))./denom1 + (sinh(p).*sin(p))./denom2;
-    yclean = (-Acoef.*2.*x) ./ (1 + x.^2).^2 + Dcoef.*(1 - x.^2) ./ (1 + x.^2).^2;
+    yclean = dysonNarrow(Bcorr, B0, dBpp, p, geometry);
 
     if Bmod > 0
         sigma = (Bmod/2.355) / max(Bstep,eps);

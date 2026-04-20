@@ -72,6 +72,13 @@ if strcmp(runName, 'TO_BE_SET_AFTER_FIRST_TRAINING')
 end
 dBThrDefault = double(cfgDS.dB_thr_G);  % authoritative narrow/wide threshold
 
+% Optional geometry field ('plate' default, 'sphere' for nanocomposites)
+if isfield(cfgDS, 'geometry') && ~isempty(cfgDS.geometry)
+    geometry = char(cfgDS.geometry);
+else
+    geometry = 'plate';
+end
+
 %% -------- Resolve paths --------
 % Convention in the current architecture:
 %   - raw Bruker .DTA/.DSC live in the LOCAL repo data/<set>/ (script-relative)
@@ -206,7 +213,7 @@ end
 isNarrow = (dB < dBThr);
 
 if isNarrow
-    ySim = dysonNarrow_dIdB(B, B0, dB, p3);
+    ySim = dysonNarrow(B, B0, dB, p3, geometry);
     modeStr = 'narrow (Dyson)';
 else
     % wide/Joshi on visible axis via uniform axis + interpolation
@@ -283,35 +290,10 @@ fprintf('Saved: %s\n', outPng);
 
 %% ========================= Local functions =========================
 
-function sig = dysonNarrow_dIdB(B, B0, dBpp, p)
-dBpp = max(dBpp, eps);
-x = 2*(B - B0) ./ (sqrt(3)*dBpp);
-
-[Acoef, Dcoef] = dysonAD_from_p(p);
-
-den = (1 + x.^2).^2;
-termAbs  = (2*x) ./ den;
-termDisp = (1 - x.^2) ./ den;
-
-sig = (-Acoef .* termAbs) + (Dcoef .* termDisp);
-end
-
-function [Acoef, Dcoef] = dysonAD_from_p(p)
-% Compute Dyson mixing coefficients A(p), D(p).
-% Full formula with two terms (Holiatkina et al., J. Appl. Phys. 134, 125306 (2023))
-
-p = max(p, 1e-9); % avoid division by zero
-ch = cosh(p); sh = sinh(p);
-c  = cos(p);  s  = sin(p);
-den = (ch + c);
-
-% Full formula with two terms (as used in DysonFitMatlab.m and DysonFitEasyspin_Simplex.m)
-denom1 = 2*p.*den;
-denom2 = den.^2;
-
-Acoef = (sh + s)./denom1 + (1 + ch.*c)./denom2;
-Dcoef = (sh - s)./denom1 + (sh.*s)./denom2;
-end
+% Local narrow-line and A/D functions were removed in April 2026; the
+% shared geometry-aware implementations live in matlab/dysonNarrow.m and
+% matlab/dysonAD.m (see matlab/dysonAD_{plate,sphere}.m for the two
+% geometries).
 
 function sigVis = dysonWideJoshi_visible_dIdB(B2, Npoints, B0, dB, alpha)
 alpha = max(alpha, 0);

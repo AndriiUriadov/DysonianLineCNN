@@ -182,6 +182,13 @@ B1      = cfg.BWindow(1); B2 = cfg.BWindow(2);
 Npoints = cfg.Npoints;
 dBthr   = cfg.dBThr;
 
+% Optional geometry field ('plate' default, 'sphere' for nanocomposites)
+if isfield(cfgDS, 'geometry') && ~isempty(cfgDS.geometry)
+    geometry = char(cfgDS.geometry);
+else
+    geometry = 'plate';
+end
+
 %% --------------------- Decide mode ---------------------
 isNarrow = (dBmax < dBthr);
 isWide   = (dBmin > dBthr);
@@ -243,7 +250,7 @@ for i = 1:N
 
     % 1) Physics: clean derivative signal on visible axis
     if isNarrow
-        sig = dysonNarrow_dIdB(Bvis, B0, dB, p3);
+        sig = dysonNarrow(Bvis, B0, dB, p3, geometry);
     else
         sig = dysonWideJoshi_visible_dIdB(B2, Npoints, B0, dB, p3);
     end
@@ -307,6 +314,7 @@ meta.B0_range_G = [B0min, B0max];
 meta.dB_range_G = [dBmin, dBmax];
 meta.third_param_range = [p3min, p3max];
 meta.third_param_meaning = ternary(isNarrow,'p','alpha');
+meta.geometry = geometry;
 meta.visible_only = true;
 meta.derivative = 'first';
 meta.augment_enabled = cfg.DoAugment;
@@ -335,48 +343,6 @@ end
 function v = randUniform(a,b)
 % Uniform random scalar in [a,b].
 v = a + (b-a)*rand();
-end
-
-function sig = dysonNarrow_dIdB(B, B0, dBpp, p)
-% Standard Dysonian first-derivative for narrow lines.
-% Normalized variable for Lorentzian with peak-to-peak linewidth dBpp:
-%   x = 2(B-B0)/(sqrt(3)*dBpp)
-% Mixture coefficients A(p), D(p) follow Dyson/Feher skin-effect approach.
-% Output is an unnormalized derivative signal.
-
-dBpp = max(dBpp, eps);
-x = 2*(B - B0) ./ (sqrt(3)*dBpp);
-
-% Dyson coefficients (compact form)
-[Acoef, Dcoef] = dysonAD_from_p(p);
-
-den = (1 + x.^2).^2;
-
-% Derivative terms (shape functions)
-termAbs  = (2*x) ./ den;          % ~ d/dB absorption
-termDisp = (1 - x.^2) ./ den;     % ~ d/dB dispersion
-
-% Overall sign is a convention; polarityFix() later unifies it.
-sig = (-Acoef .* termAbs) + (Dcoef .* termDisp);
-end
-
-function [Acoef, Dcoef] = dysonAD_from_p(p)
-% Compute Dyson mixing coefficients A(p), D(p).
-%
-% p = lambda/delta (or 2d/delta), lambda is sample thickness, delta skin depth.
-% Full formula with two terms (Holiatkina et al., J. Appl. Phys. 134, 125306 (2023))
-
-p = max(p, 1e-9); % avoid division by zero
-ch = cosh(p); sh = sinh(p);
-c  = cos(p);  s  = sin(p);
-den = (ch + c);
-
-% Full formula with two terms (as used in DysonFitMatlab.m and DysonFitEasyspin_Simplex.m)
-denom1 = 2*p.*den;
-denom2 = den.^2;
-
-Acoef = (sh + s)./denom1 + (1 + ch.*c)./denom2;
-Dcoef = (sh - s)./denom1 + (sh.*s)./denom2;
 end
 
 function sigVis = dysonWideJoshi_visible_dIdB(B2, Npoints, B0, dB, alpha)

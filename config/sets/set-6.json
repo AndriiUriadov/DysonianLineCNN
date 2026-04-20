@@ -1,0 +1,35 @@
+{
+  "_doc": "Per-set dataset generation parameters for set-6 (15 spectra, CDs@SiO2 nanocomposites). Sphere geometry (Savchenko et al. 2022). Temperature series. MATLAB fit ranges: B0=3351.2-3354.1 G, dB=5.1-8.4 G, p~3.24-3.25 (very narrow range — likely temperature-invariant). Ranges widened with ~30% margin below and above to cover unseen regimes.",
+
+  "N": 10000,
+  "Npoints": 4096,
+  "Seed": 1,
+  "Prefix": "dataset",
+
+  "geometry": "sphere",
+
+  "B0Range_G": [3345, 3360],
+  "dBRange_G": [3, 12],
+  "pRange": [2.0, 4.5],
+  "BWindow_G": [3326, 3376],
+  "dB_thr_G": 1000,
+
+  "DoAugment": true,
+
+  "SNRdBRange": [40, 60],
+  "BaselineOffsetRange": [-0.01, 0.01],
+  "BaselineSlopeRange": [-0.02, 0.02],
+  "BaselineQuadRange": [-0.01, 0.01],
+  "BScaleRange": [1.0, 1.0],
+  "BOffsetRange_G": [0, 0],
+
+  "SpikeProb": 0.0,
+  "SpikeCountRange": [1, 2],
+  "SpikeAmpRange": [0.01, 0.05],
+
+  "ModSmoothProb": 0.05,
+  "ModSmoothSigmaPts": [0.6, 2.5],
+
+  "DoVisualCheck": true,
+  "Nvisual": 10
+}

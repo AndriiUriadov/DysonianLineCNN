@@ -229,6 +229,7 @@ def train_and_save_run(
     meta_out = {
         "created": stamp,
         "set_name": paths.get("set_name"),
+        "geometry": dataset_cfg.get("geometry", "plate"),
         "dataset_prefix": dataset_cfg.get("Prefix", "unknown"),
         "profile_name": training_cfg.get("profile_name", "unknown"),
         "precision_policy": precision,

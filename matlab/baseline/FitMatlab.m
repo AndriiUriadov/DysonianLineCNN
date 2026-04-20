@@ -27,6 +27,7 @@ spectrumId = char(spectrumId);
 %% Resolve paths
 thisDir  = fileparts(mfilename('fullpath'));
 repoRoot = fileparts(fileparts(thisDir));  % matlab/baseline -> matlab -> repo
+addpath(fullfile(repoRoot, 'matlab'));      % for load_config, dysonNarrow, dysonAD
 
 dataDir    = fullfile(repoRoot, 'data', setName);
 resultsDir = fullfile(repoRoot, 'results', setName, 'matlab');
@@ -35,10 +36,21 @@ if ~exist(resultsDir, 'dir'); mkdir(resultsDir); end
 dtaFile = fullfile(dataDir, [spectrumId '.DTA']);
 assert(isfile(dtaFile), 'DTA file not found: %s', dtaFile);
 
+%% Read geometry from per-set config ('plate' default)
+geometry = 'plate';
+try
+    cfgDS = load_config(['sets/' setName]);
+    if isfield(cfgDS, 'geometry') && ~isempty(cfgDS.geometry)
+        geometry = char(cfgDS.geometry);
+    end
+catch
+    % legacy sets without per-set config: stay on 'plate' default
+end
+
 %% Load spectrum via EasySpin
-if exist('eprload','file') ~= 2
+% EasySpin ships eprload as a .p file (exist returns 6) or .m (returns 2).
+if exist('eprload') == 0
     error('EasySpin not found. Add it to MATLAB path: addpath(''/path/to/easyspin''); savepath;');
-    rehash toolboxcache;
 end
 
 [B, spc] = eprload(dtaFile);
@@ -98,8 +110,17 @@ Bscale_init = 1.0;
 Bshift_init = 0.0;
 
 p0 = [B0_init, dB_init, p_init, A_init, 0, 0, 0, Bscale_init, Bshift_init];
-lb = [fitWin(1)+20, 5, 0.2, 0, -Inf, -Inf, -Inf, 0.995, -10];
-ub = [fitWin(2)-20, 1500, 5.0, Inf, Inf, Inf, Inf, 1.010, 10];
+% Bounds on dB and p are geometry-dependent:
+%  - plate (set-1..5): tight, matches original Holiatkina-style fits
+%  - sphere (set-6+): relaxed, because nanocomposite narrow lines can have
+%    dB down to ~3 G and p up to ~5-10 (strong skin effect)
+if strcmpi(geometry, 'sphere')
+    lb = [fitWin(1)+20, 1, 0.2,  0,   -Inf, -Inf, -Inf, 0.995, -10];
+    ub = [fitWin(2)-20, 1500, 10.0, Inf,  Inf,  Inf,  Inf, 1.010,  10];
+else  % 'plate' (default)
+    lb = [fitWin(1)+20, 5, 0.2,  0,   -Inf, -Inf, -Inf, 0.995, -10];
+    ub = [fitWin(2)-20, 1500, 5.0,  Inf,  Inf,  Inf,  Inf, 1.010,  10];
+end
 
 %% Model and fit
 Bstep = median(diff(Bb));
@@ -107,7 +128,7 @@ Bmod  = min(1.0, 0.03*dB_init);
 
 model_fun = @(p,Bvec) dyson_with_baseline( ...
     Bvec, p(1), p(2), p(3), p(4), p(5), p(6), p(7), ...
-    p(8), p(9), Bmod, Bstep);
+    p(8), p(9), Bmod, Bstep, geometry);
 
 res_fun = @(p) model_fun(p,Bb) - yb;
 
@@ -184,15 +205,10 @@ end
 
 %% ========================= Local functions =========================
 
-function y = dyson_with_baseline(B, B0, dBpp, p, A, off, slope, quad, Bscale, Bshift, Bmod, Bstep)
+function y = dyson_with_baseline(B, B0, dBpp, p, A, off, slope, quad, Bscale, Bshift, Bmod, Bstep, geometry)
+    if nargin < 13 || isempty(geometry); geometry = 'plate'; end
     Bcorr = Bshift + Bscale .* B;
-    x = 2*(Bcorr - B0)/(sqrt(3)*dBpp);
-
-    denom1 = 2*p.*(cosh(p) + cos(p));
-    denom2 = (cosh(p) + cos(p)).^2;
-    Acoef = (sinh(p) + sin(p))./denom1 + (1 + cosh(p).*cos(p))./denom2;
-    Dcoef = (sinh(p) - sin(p))./denom1 + (sinh(p).*sin(p))./denom2;
-    yclean = (-Acoef.*2.*x) ./ (1 + x.^2).^2 + Dcoef.*(1 - x.^2) ./ (1 + x.^2).^2;
+    yclean = dysonNarrow(Bcorr, B0, dBpp, p, geometry);
 
     if Bmod > 0
         sigma = (Bmod/2.355) / max(Bstep,eps);
