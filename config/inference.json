@@ -1,7 +1,7 @@
 {
   "_doc": "Selects which trained model and which real spectrum to run inference on.",
-  "set_name": "set-5",
-  "runName": "20260412_143406",
+  "set_name": "set-6",
+  "runName": "20260420_183721",
   "spectrum_basename": "1",
   "dataset_prefix": "dataset"
 }
