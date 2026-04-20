@@ -29,8 +29,16 @@
 %    Per-set output goes to <DriveProjectDir>/results/<SetName>/cnn/dataset/.
 %
 %  PHYSICS MODEL
-%    Feher-Kip Dysonian derivative with full two-term A/D coefficients
-%    (Holiatkina et al., J. Appl. Phys. 134, 145702, 2023).
+%    Geometry-aware Dysonian first-derivative lineshape dispatched via
+%    dysonNarrow(B, B0, dB, p, geometry). Geometry is read from
+%    cfgDS.geometry (per-set config) and stored in meta.geometry:
+%      - 'plate'  (default) — Feher-Kip flat-plate, full two-term A/D
+%                              coefficients
+%                              (Holiatkina et al., 2023). Used for sets 1..5.
+%      - 'sphere'            — spherical powder-grain geometry with
+%                              additional 1/p^3 and 1/p^4 terms
+%                              (Savchenko et al., 2022). Used for set-6
+%                               (CDs@SiO2 nanocomposites).
 %
 %  AUGMENTATION PIPELINE
 %    physics -> polarity fix -> modulation smoothing (probabilistic) ->
