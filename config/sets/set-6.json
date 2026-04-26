@@ -1,5 +1,5 @@
 {
-  "_doc": "Per-set dataset generation parameters for set-6 (15 spectra, CDs@SiO2 nanocomposites). Sphere geometry (Savchenko et al. 2022). Temperature series. Actual MATLAB fit ranges: B0=[3350.8, 3353.9] G, dB=[5.1, 8.8] G, p=[1.45, 4.51]. Training ranges widened with margin to cover unseen regimes.",
+  "_doc": "Per-set dataset generation parameters for set-6 (15 spectra, CDs@SiO2 nanocomposites). Sphere geometry (Savchenko et al. 2022). Temperature series. Actual MATLAB fit ranges: B0=[3350.8, 3353.9] G, dB=[5.1, 8.8] G, p=[1.45, 4.51]. pRange upper bound capped at 4.5 (was 5.0) — the parity_p3 plot from the 20260420_183721 run showed degraded accuracy in [4, 5]; capping at 4.5 lets the model focus on the well-resolved region. Spectra 13-15 (true p ~> 4.5) will saturate at the cap and are reported as such.",
 
   "N": 10000,
   "Npoints": 4096,
@@ -10,7 +10,7 @@
 
   "B0Range_G": [3345, 3360],
   "dBRange_G": [3, 12],
-  "pRange": [1.0, 5.0],
+  "pRange": [1.0, 4.5],
   "BWindow_G": [3326, 3376],
   "dB_thr_G": 1000,
 
