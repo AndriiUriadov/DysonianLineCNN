@@ -139,7 +139,6 @@ a `data/` mirror:
           cnn_model.keras, y_min.npy, y_max.npy
           B_axis.csv, B_axis.npy, model_meta.json
           parity_*.png, loss.png, history.csv
-  report.pdf                                    — compiled LaTeX report
 ```
 
 ## Example results
@@ -181,16 +180,16 @@ Contents of a typical `colab_full` run (`N=10000`, `Npoints=4096`):
 | `loss.png` | 40 KB | Training / validation loss curve |
 | `loss_full_and_zoom.png` | 100 KB | Same curve plus a zoomed tail region for inspecting late-epoch convergence |
 | `parity_test.png` | 260 KB | Combined 3-panel true-vs-predicted scatter (`B0`, `dB`, `p3`) on the test set, density-colored, with `R²` and MAE in each subplot title |
-| `parity_B0.png` | 120 KB | Full-size B0 parity for article figures with residual histogram inset |
+| `parity_B0.png` | 120 KB | Full-size B0 parity with residual histogram inset |
 | `parity_dB.png` | 110 KB | Full-size dB parity, same format |
 | `parity_p3.png` | 130 KB | Full-size p3 parity, same format |
 | `residuals_test.png` | 70 KB | Combined 3-panel residual histograms (`y_pred − y_true`) with μ and σ annotated |
 | `dysonian_test_predictions.csv` | 110 KB | Per-sample `(B0, dB, p3)` true and predicted values in physical units for ad-hoc analysis |
 | `_X_test.npy` / `_y_test.npy` | 23 MB / 18 KB | Cached test split so `evaluate_run` can be replayed in a separate Jupyter session without re-splitting the dataset |
 
-Figures are saved as PNG by default. For LaTeX article embeddings you
-can opt into vector output via
-`evaluate_run(run_dir, formats=["png", "pdf"])` (or add `"svg"` too).
+Figures are saved as PNG by default; pass
+`formats=["png", "pdf"]` (or add `"svg"`) to `evaluate_run` to also
+emit vector copies of every plot.
 
 The leading underscore on `_X_test.npy` / `_y_test.npy` marks them as
 internal implementation files — they let you call `evaluate_run(run_dir)`
@@ -218,8 +217,8 @@ every head. Three of the 15 set-6 spectra (highest-temperature
 points) have a true `p` slightly above 4.5 and saturate at the
 training-range cap by design — see the per-set `_doc` field in
 `config/sets/set-6.json` for the rationale.
-See the compiled LaTeX report on Google Drive for the full three-method
-comparison.
+See `results/set-N/comparison.csv` for the side-by-side B0/ΔB/p
+numbers from all three methods on every experimental spectrum.
 
 ## Getting started
 
@@ -444,8 +443,9 @@ for i in range(1, 7):  # adjust range for other sets
 # 7. Validate: overlay CNN reconstruction on experimental spectra
 #    Loop Validator for each spectrum_basename in the set
 
-# 8. Compile LaTeX report
-cd latex && pdflatex report.tex && pdflatex report.tex
+# 8. Aggregate: build results/set-1/cnn/summary.csv (per-spectrum
+#    predictions) and results/set-1/comparison.csv (joining the
+#    matlab, easyspin and cnn summary.csv tables on spectrum_id).
 ```
 
 Per-set configuration files (`config/sets/set-N.json`) contain the
