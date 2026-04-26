@@ -32,30 +32,73 @@ Ukraine "Igor Sikorsky Kyiv Polytechnic Institute".
 ## Pipeline overview (per-set)
 
 Each experimental set has its own parameter ranges and magnetic field window,
-requiring an independent CNN model. The workflow for each set:
+requiring an independent CNN model. The end-to-end workflow for one set is
+a sequence of nine steps; steps 1–4 prepare and train the model, steps
+5–9 run it on the real spectra and aggregate the comparison tables.
 
-1. **Classical baselines (MATLAB)** —
-   [matlab/baseline/FitAll.m](matlab/baseline/FitAll.m) fits all spectra in
-   `data/set-N/` with both MATLAB lsqnonlin and EasySpin esfit, saving
-   results to `results/set-N/{matlab,easyspin}/`.
+1. **Drop the experimental spectra into [data/set-N/](data/)** — Bruker
+   `.DTA` / `.DSC` pairs. The `data/` tree is **not** in git: external
+   reproducers must supply their own files (or the original ones via a
+   request to the authors). Use file basenames `1, 2, ...` or any other
+   naming you prefer; the rest of the pipeline references them by basename.
 
-2. **Synthetic dataset generation (MATLAB)** —
-   [matlab/DysonGeneratorMix.m](matlab/DysonGeneratorMix.m) reads per-set
-   config from [config/sets/set-N.json](config/sets/) and writes
-   `.npy` files to Google Drive (`DysonianLineCNN/set-N/`).
+2. **Classical baselines (MATLAB)** —
+   [matlab/baseline/FitAll.m](matlab/baseline/FitAll.m) fits every
+   spectrum in `data/set-N/` with both `lsqnonlin` and `esfit`, saving
+   per-spectrum JSON + PNG and a `summary.csv` to
+   `results/set-N/{matlab,easyspin}/`.
 
-3. **CNN training (Google Colab)** —
+3. **Author the per-set config** —
+   [config/sets/set-N.json](config/sets/) records the `B0`, `ΔB`, `p`
+   ranges read off the FitAll output, the `BWindow_G` (intersection of
+   all sweeps in the set, mandatory), the `"geometry"` switch (`plate`
+   for sets 1–5, `sphere` for nanocomposite-type samples), and the
+   augmentation toggles. Joshi/wide branch is selected automatically
+   when `dBRange_G` exceeds `dB_thr_G` (default 1000 G).
+
+4. **Synthetic dataset generation (MATLAB)** —
+   [matlab/DysonGeneratorMix.m](matlab/DysonGeneratorMix.m) consumes
+   the per-set config and writes `X_*.npy`, `y_*.npy`, `B_axis_*.npy`,
+   `meta_mix_*.json` to
+   `<Drive>/results/set-N/cnn/dataset/`.
+
+5. **CNN training (Google Colab)** —
    [notebooks/01_train_and_eval.ipynb](notebooks/01_train_and_eval.ipynb)
-   trains the CNN and saves the run to `Drive/DysonianLineCNN/set-N/runs/`.
+   with `SET_NAME = "set-N"`. Training writes a timestamped run dir
+   `<Drive>/results/set-N/cnn/runs/<YYYYMMDD_HHMMSS>/` containing
+   `cnn_model.keras`, `y_min/y_max.npy`, `B_axis.npy/csv`,
+   `model_meta.json`, parity plots, and a per-sample test prediction
+   CSV.
 
-4. **Inference on real spectra** —
+6. **Wire the trained run to inference (manual edit)** — open
+   [config/inference.json](config/inference.json) and set
+   `set_name`, `runName` (the timestamp from step 5), and
+   `spectrum_basename` (the first spectrum to start with). Both
+   `PrepareOneSpectrumForCNN` and `predict_for_set` read this file;
+   updating `runName` is what makes a freshly trained model the
+   active one.
+
+7. **Resample real spectra onto the model's field axis (MATLAB)** —
    [matlab/PrepareOneSpectrumForCNN.m](matlab/PrepareOneSpectrumForCNN.m)
-   resamples spectra onto the run's `B_axis`, then
-   [dyson_cnn.infer.predict_for_set](dyson_cnn/infer.py) predicts parameters,
-   and [matlab/Validator.m](matlab/Validator.m) overlays the reconstruction.
+   loops over each spectrum basename (set `spectrum_basename` then call
+   `PrepareOneSpectrumForCNN` per spectrum, or use a small wrapping
+   script). Output: `<Drive>/results/set-N/cnn/<id>_spectrum.csv`.
 
-5. **Comparison** — Side-by-side results from all three methods in
-   `results/set-N/comparison.csv`.
+8. **CNN inference (Python)** —
+   [`dyson_cnn.infer.predict_for_set`](dyson_cnn/infer.py) reads the
+   per-spectrum CSV, runs the network, denormalizes via the run's
+   `y_min`/`y_max`, and saves `<id>_predicted.json` next to the
+   spectrum CSV. Then [matlab/Validator.m](matlab/Validator.m)
+   overlays the predicted reconstruction over the experimental curve
+   to produce `<id>_cnn_fit.png`.
+
+9. **Aggregate** — copy the per-spectrum CNN JSONs and overlay PNGs
+   from Drive into `results/set-N/cnn/`, then build
+   `results/set-N/cnn/summary.csv` (one row per spectrum) and the
+   side-by-side `results/set-N/comparison.csv` (joining the matlab,
+   easyspin and cnn `summary.csv` tables on `spectrum_id`). Only the
+   summary and comparison CSVs are committed to git; per-spectrum
+   JSONs/PNGs stay local.
 
 ## Repository layout
 
@@ -69,7 +112,7 @@ requiring an independent CNN model. The workflow for each set:
 | [notebooks/](notebooks/) | Thin Colab/Mac notebooks with `SET_NAME` variable |
 | [tests/](tests/) | 49 pytest tests |
 | [results/](results/) | Summary CSVs and comparison tables (committed); per-spectrum JSON/PNG (local) |
-| [data/](data/) | Raw experimental Bruker spectra in `set-1/` through `set-6/` (not in git) |
+| [data/](data/) | Raw experimental Bruker `.DTA` / `.DSC` pairs in `set-1/` through `set-6/`. Not in git: external reproducers must supply their own files. |
 
 Data (`.npy`, `.DTA`, `.DSC`) and training artifacts (trained CNN models
 under `results/set-N/cnn/runs/<stamp>/`) are **not** stored in git — they
@@ -166,13 +209,15 @@ Each set has an independent CNN model trained on set-specific synthetic data.
 | set-3 | `20260412_135545` | 53 | 0.67 | 0.51 | 0.021 |
 | set-4 | `20260412_141449` | 80 | 0.56 | 0.77 | 0.022 |
 | set-5 | `20260412_143406` | 39 | 0.80 | 0.33 | 0.015 |
-| set-6 | `20260420_183721` | 15 | 0.17 | 0.09 | 0.080 |
+| set-6 | `20260426_075116` | 15 | 0.12 | 0.06 | 0.038 |
 
-Set-6 uses sphere geometry; sets 1–5 use plate. All models have 691,283
-parameters on the `colab_full` profile. Test-split R² is above 0.998 for
-every head on sets 1–5; on set-6 R² is 0.997 for B₀ and ΔB and 0.984 for
-p, slightly lower because the $p$ training range was widened to
-$[1.0,\,5.0]$ to cover the saturated-skin regime.
+Set-6 uses sphere geometry with the `p` training range capped at
+`[1.0, 4.5]`; sets 1–5 use plate. All models have 691,283 parameters
+on the `colab_full` profile and reach test-split R² above 0.997 for
+every head. Three of the 15 set-6 spectra (highest-temperature
+points) have a true `p` slightly above 4.5 and saturate at the
+training-range cap by design — see the per-set `_doc` field in
+`config/sets/set-6.json` for the rationale.
 See the compiled LaTeX report on Google Drive for the full three-method
 comparison.
 
@@ -404,8 +449,8 @@ cd latex && pdflatex report.tex && pdflatex report.tex
 ```
 
 Per-set configuration files (`config/sets/set-N.json`) contain the
-parameter ranges determined from the classical baseline fits. See
-[Analysis.md](Analysis.md) for the rationale behind each range choice.
+parameter ranges determined from the classical baseline fits, with a
+`_doc` field documenting the source ranges and any per-set rationale.
 
 ### Key configuration notes
 
@@ -440,8 +485,7 @@ See [LICENSE](LICENSE) for the full text of both licenses.
 
 If you use this software or data in your research, please cite:
 
-> A.V. Uriadov, D.V. Savchenko, "DysonianLineCNN: 1D CNN for Dysonian EPR
-> Line Parameter Extraction," 2026.
+> A.V. Uriadov, D.V. Savchenko, "Physics-Informed Deep Learning for Automated Analysis of Dyson Line Shapes in EPR Spectroscopy" 2026.
 
 See [CITATION.cff](CITATION.cff) for the machine-readable citation format
 (GitHub renders a "Cite this repository" button automatically).
