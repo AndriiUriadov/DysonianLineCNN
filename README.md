@@ -7,7 +7,7 @@ compared on 195 experimental spectra across 6 independent datasets:
 1. **MATLAB optimizer** — `lsqnonlin` with geometry-aware Dysonian model
 2. **EasySpin esfit** — geometry-aware optimizer dispatch (Levenberg-Marquardt
    two-step for plate; Nelder-Mead simplex single-step for sphere)
-3. **1D Residual CNN** — trained on synthetic spectra, predicts parameters
+3. **1D Convolutional Neural Network (CNN)** — trained on synthetic spectra, predicts parameters
    directly from the normalized spectrum shape
 
 Three physical models are supported. The generator dispatches between the
