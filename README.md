@@ -239,7 +239,7 @@ Linux. MATLAB is available on all three platforms as well.
 #### Step 1. Clone the repository and create a virtualenv
 
 ```bash
-git clone git@github.com:AndriiUriadov/DysonianLineCNN.git
+git clone https://github.com/AndriiUriadov/DysonianLineCNN.git
 cd DysonianLineCNN
 python3 -m venv .venv
 ```
@@ -349,8 +349,8 @@ working options are:
 
 #### Colab first-time setup
 
-On Google Colab there is no local install step beyond adding the
-`GITHUB_DEPLOY_KEY` secret (see [Colab setup](#colab-setup) below). The
+On Google Colab there is no local install step beyond a plain `git clone`
+of the public repository (see [Colab setup](#colab-setup) below). The
 notebooks bootstrap themselves on a fresh runtime and `load_paths`
 automatically falls back to `paths.example.json` because `drive_root_colab`
 is universal across users (`/content/drive/MyDrive`).
@@ -369,53 +369,18 @@ channel order, model architecture, and inference. All should pass in a few secon
 The training notebooks ([notebooks/01_train_and_eval.ipynb](notebooks/01_train_and_eval.ipynb)
 and [notebooks/02_infer_real.ipynb](notebooks/02_infer_real.ipynb)) are
 thin wrappers around `dyson_cnn/*` and run on both Google Colab and local
-Mac. On a fresh Colab runtime, the first code cell does:
+Mac. The repository is public, so a fresh Colab runtime needs no keys or
+secrets — the first code cell simply:
 
-1. Reads an SSH deploy key from Colab Secrets.
-2. Writes it to `~/.ssh/id_ed25519`, `chmod 600`, trusts `github.com`.
-3. `git clone git@github.com:AndriiUriadov/DysonianLineCNN.git` into `/content`.
-4. `pip install -e ".[dev]"` editable install.
-5. `drive.mount('/content/drive')`.
+1. `git clone https://github.com/AndriiUriadov/DysonianLineCNN.git` into `/content`.
+2. `pip install -e ".[dev]"` editable install.
+3. `drive.mount('/content/drive')` for datasets and trained runs.
 
-**One-time Colab setup** (per Colab account):
+`load_paths` automatically falls back to `paths.example.json` because
+`drive_root_colab` is universal across users (`/content/drive/MyDrive`).
 
-1. On your Mac, generate a dedicated SSH keypair for Colab (do not reuse
-   your personal key):
-
-   ```bash
-   ssh-keygen -t ed25519 -f /tmp/colab_deploy_key -N "" -C "colab-deploy"
-   ```
-
-2. Add the **public** key (`/tmp/colab_deploy_key.pub`) to the GitHub repo
-   as a **read-only** deploy key:
-
-   ```text
-   GitHub → DysonianLineCNN → Settings → Deploy keys → Add deploy key
-   Title: Colab (read-only)
-   Key: <paste contents of /tmp/colab_deploy_key.pub>
-   Allow write access: UNCHECKED
-   ```
-
-3. Copy the **private** key contents into Colab Secrets:
-
-   ```text
-   Colab → any notebook → Secrets (key icon in left sidebar) → New secret
-   Name: GITHUB_DEPLOY_KEY
-   Value: <paste contents of /tmp/colab_deploy_key — the whole file>
-   Notebook access: enabled
-   ```
-
-4. Delete the local copy so it never ends up in git or Drive:
-
-   ```bash
-   rm /tmp/colab_deploy_key /tmp/colab_deploy_key.pub
-   ```
-
-Read-only is important: it means even accidental `git push` from a Colab
-notebook fails with a clear error, so writes stay local to your Mac.
-
-After the first successful `git pull` in Colab, the notebooks are cached
-in `/content/DysonianLineCNN` for the session.
+After the first clone, the notebooks are cached in
+`/content/DysonianLineCNN` for the session.
 
 ## Reproducing results for a specific set
 
