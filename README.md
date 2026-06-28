@@ -1,5 +1,7 @@
 # DysonianLineCNN
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20996506.svg)](https://doi.org/10.5281/zenodo.20996506)
+
 A hybrid MATLAB + Python pipeline for extracting Dysonian EPR line parameters
 (`B0`, `dB`, `p`) from first-derivative EPR spectra. Three methods are
 compared on 195 experimental spectra across 6 independent datasets:
@@ -481,6 +483,15 @@ This repository uses a dual-license model:
   [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
 See [LICENSE](LICENSE) for the full text of both licenses.
+
+### Data and trained models (Zenodo)
+
+The trained CNN models and synthetic training datasets for all six sets are
+archived on Zenodo under CC BY 4.0 and citable via a permanent DOI:
+[**10.5281/zenodo.20996506**](https://doi.org/10.5281/zenodo.20996506). The
+GitHub repository holds the source code, configs, tests and result tables;
+the Zenodo record holds the heavy data and model artifacts that are not in
+git. A reviewer needs only this repository plus the DOI.
 
 ### Registration and rights
 

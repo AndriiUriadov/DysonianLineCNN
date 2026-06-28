@@ -1,0 +1,46 @@
+{
+  "upload_type": "dataset",
+  "title": "DysonianLineCNN: trained CNN models and synthetic training datasets for Dysonian EPR line-shape parameter extraction",
+  "version": "1.0.0",
+  "language": "eng",
+  "access_right": "open",
+  "license": "cc-by-4.0",
+  "creators": [
+    {
+      "name": "Uriadov, Andrii V.",
+      "affiliation": "National Technical University of Ukraine \"Igor Sikorsky Kyiv Polytechnic Institute\"",
+      "orcid": "0009-0008-8110-9505"
+    },
+    {
+      "name": "Savchenko, Dariya V.",
+      "affiliation": "National Technical University of Ukraine \"Igor Sikorsky Kyiv Polytechnic Institute\"",
+      "orcid": "0000-0002-0005-0732"
+    }
+  ],
+  "keywords": [
+    "EPR spectroscopy",
+    "electron paramagnetic resonance",
+    "Dysonian line shape",
+    "convolutional neural network",
+    "deep learning",
+    "parameter extraction",
+    "Feher-Kip model",
+    "synthetic training data",
+    "trained model",
+    "physics-informed machine learning"
+  ],
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "scheme": "url",
+      "identifier": "https://github.com/AndriiUriadov/DysonianLineCNN"
+    },
+    {
+      "relation": "isDerivedFrom",
+      "scheme": "url",
+      "identifier": "https://github.com/AndriiUriadov/DysonianLineCNN"
+    }
+  ],
+  "notes": "Officially registered software complex (Ukrainian title: «Програмний комплекс автоматизованого аналізу форми лінії Дайсона у спектрах ЕПР на основі згорткових нейромереж»). Economic (property) rights held in full by the National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute' under rights-transfer agreement No. 26/1 of 2026-01-12 and certificate of agreement registration No. 7929 of 2026-02-23. Open-access publication authorized by the University (permission of the Vice-Rector for Research).",
+  "description": "<p>This dataset accompanies the <strong>DysonianLineCNN</strong> project (source code: https://github.com/AndriiUriadov/DysonianLineCNN ), a hybrid MATLAB + Python pipeline that extracts Dysonian electron paramagnetic resonance (EPR) line parameters (B0, &Delta;B, and the asymmetry parameter p) from first-derivative EPR spectra using a 1D residual convolutional neural network.</p><p>The deposit contains, for each of the six experimental sets (set-1 &hellip; set-6):</p><ul><li><strong>Trained CNN model</strong> &mdash; <code>cnn_model.keras</code> (691,283 parameters, <code>colab_full</code> profile, input shape 4096&times;3, three output heads [B0, dB, p3]) together with its atomic reproducibility metadata: <code>model_meta.json</code>, per-head normalization statistics <code>y_min.npy</code> / <code>y_max.npy</code> (computed from the training split only), and the magnetic-field axis <code>B_axis.npy</code> / <code>B_axis.csv</code>.</li><li><strong>Synthetic training dataset</strong> &mdash; <code>X_dyson_mix_dataset.npy</code>, <code>y_dyson_mix_dataset.npy</code>, <code>B_axis_mix_dataset.npy</code> and <code>meta_mix_dataset.json</code> (N = 10000 spectra, Npoints = 4096), generated deterministically (random seed 42) by <code>matlab/DysonGeneratorMix.m</code> from the per-set configuration committed in the source repository.</li></ul><p>Sets 1&ndash;5 use flat-plate (Feher&ndash;Kip) geometry; set-6 uses sphere (powder-grain) geometry. A model file is only meaningful together with the normalization statistics and field axis from the same run directory.</p><p>The trained models reproduce the test-split metrics reported in the article and in the repository README. The synthetic datasets are byte-reproducible from <code>config/sets/set-N.json</code> + <code>matlab/DysonGeneratorMix.m</code> in the source repository; they are archived here for convenience and long-term preservation.</p><p><strong>License:</strong> Creative Commons Attribution 4.0 International (CC BY 4.0).</p>"
+}

@@ -1,0 +1,13 @@
+This dataset accompanies the DysonianLineCNN project (source code: https://github.com/AndriiUriadov/DysonianLineCNN), a hybrid MATLAB + Python pipeline that extracts Dysonian electron paramagnetic resonance (EPR) line parameters (B0, ΔB, and the asymmetry parameter p) from first-derivative EPR spectra using a 1D residual convolutional neural network.
+
+The deposit contains, for each of the six experimental sets (set-1 … set-6):
+
+- Trained CNN model — cnn_model.keras (691,283 parameters, colab_full profile, input shape 4096×3, three output heads [B0, dB, p3]) together with its atomic reproducibility metadata: model_meta.json, per-head normalization statistics y_min.npy / y_max.npy (computed from the training split only), and the magnetic-field axis B_axis.npy / B_axis.csv.
+
+- Synthetic training dataset — X_dyson_mix_dataset.npy, y_dyson_mix_dataset.npy, B_axis_mix_dataset.npy and meta_mix_dataset.json (N = 10000 spectra, Npoints = 4096), generated deterministically (random seed 42) by matlab/DysonGeneratorMix.m from the per-set configuration committed in the source repository.
+
+Sets 1–5 use flat-plate (Feher–Kip) geometry; set-6 uses sphere (powder-grain) geometry. A model file is only meaningful together with the normalization statistics and field axis from the same run directory.
+
+The trained models reproduce the test-split metrics reported in the article and in the repository README. The synthetic datasets are byte-reproducible from config/sets/set-N.json + matlab/DysonGeneratorMix.m in the source repository; they are archived here for convenience and long-term preservation.
+
+License: Creative Commons Attribution 4.0 International (CC BY 4.0).

@@ -11,6 +11,10 @@ authors:
     family-names: Savchenko
     affiliation: "National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute'"
 repository-code: "https://github.com/AndriiUriadov/DysonianLineCNN"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20996506"
+    description: "Archived trained CNN models and synthetic training datasets (data + model deposit)"
 license:
   - MIT
   - CC-BY-4.0
