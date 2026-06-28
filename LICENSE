@@ -1,14 +1,16 @@
 This repository contains two types of content under separate licenses:
 
 ================================================================================
-SOFTWARE (source code, scripts, configuration files)
+SOFTWARE (source code, scripts, general config files)
 License: MIT
 ================================================================================
 
 MIT License
 
-Copyright (c) 2026 Andrii V. Uriadov, Dariya V. Savchenko
-National Technical University of Ukraine "Igor Sikorsky Kyiv Polytechnic Institute"
+Copyright (c) 2026 National Technical University of Ukraine
+"Igor Sikorsky Kyiv Polytechnic Institute" (rights holder)
+Created by Andrii V. Uriadov and Dariya V. Savchenko.
+Economic (property) rights transferred to the University in full.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +31,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ================================================================================
-RESEARCH DATA AND DOCUMENTATION (datasets, results, trained models, figures)
+RESEARCH DATA AND DOCUMENTATION (datasets, results, trained models, figures,
+README and other documentation)
 License: Creative Commons Attribution 4.0 International (CC BY 4.0)
 ================================================================================
 
-Copyright (c) 2026 Andrii V. Uriadov, Dariya V. Savchenko
-National Technical University of Ukraine "Igor Sikorsky Kyiv Polytechnic Institute"
+Copyright (c) 2026 National Technical University of Ukraine
+"Igor Sikorsky Kyiv Polytechnic Institute" (rights holder)
+Created by Andrii V. Uriadov and Dariya V. Savchenko.
+Economic (property) rights transferred to the University in full.
 
 This work is licensed under the Creative Commons Attribution 4.0
 International License. To view a copy of this license, visit
@@ -55,3 +60,4 @@ This license applies to:
   - Trained CNN models and training artifacts (results/set-N/cnn/runs/)
   - Fit results and comparison tables (results/)
   - Configuration parameters derived from experimental data (config/sets/)
+  - Documentation (README.md, config/README.md, and methodology notes)

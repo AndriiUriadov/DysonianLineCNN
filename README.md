@@ -473,13 +473,26 @@ parameter ranges determined from the classical baseline fits, with a
 
 This repository uses a dual-license model:
 
-- **Source code** (Python, MATLAB, configuration files) —
-  [MIT License](LICENSE)
+- **Source code** (Python, MATLAB, and general config files such as the
+  training/inference profiles) — [MIT License](LICENSE)
 - **Research data and documentation** (experimental spectra, trained models,
-  fit results, per-set configs) —
+  fit results, per-set configs in `config/sets/`, and documentation such as
+  this README) —
   [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
 See [LICENSE](LICENSE) for the full text of both licenses.
+
+### Registration and rights
+
+The work is officially registered in Ukrainian as *«Програмний комплекс
+автоматизованого аналізу форми лінії Дайсона у спектрах ЕПР на основі
+згорткових нейромереж»* (short name: **DysonianLineCNN**). The economic
+(property) rights belong in full to the National Technical University of
+Ukraine "Igor Sikorsky Kyiv Polytechnic Institute" under the rights-transfer
+agreement No. 26/1 of 12 January 2026 and the certificate of agreement
+registration No. 7929 of 23 February 2026. Open-access publication under the
+licenses above is authorized by the University (permission of the
+Vice-Rector for Research).
 
 ### Citation
 

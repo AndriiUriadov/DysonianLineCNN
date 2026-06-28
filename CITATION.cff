@@ -1,6 +1,7 @@
 cff-version: 1.2.0
-title: "DysonianLineCNN: 1D CNN for Dysonian EPR Line Parameter Extraction"
+title: "Physics-Informed Deep Learning for Automated Analysis of Dyson Line Shapes in EPR Spectroscopy"
 message: "If you use this software or data, please cite it as below."
+abstract: "Officially registered software complex (Ukrainian title: «Програмний комплекс автоматизованого аналізу форми лінії Дайсона у спектрах ЕПР на основі згорткових нейромереж»). Economic (property) rights held in full by the National Technical University of Ukraine 'Igor Sikorsky Kyiv Polytechnic Institute' under rights-transfer agreement No. 26/1 of 2026-01-12 and certificate of agreement registration No. 7929 of 2026-02-23."
 type: software
 authors:
   - given-names: Andrii V.
