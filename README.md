@@ -143,23 +143,25 @@ a `data/` mirror:
           parity_*.png, loss.png, history.csv
 ```
 
-## Example results
+## Trained models and datasets (Zenodo archive)
 
-Sample outputs from processing all 195 experimental spectra across 6 sets
-(MATLAB, EasySpin, and CNN fit overlays, parity plots, loss curves):
+The trained CNN models and synthetic training datasets for all six sets are
+permanently archived on Zenodo under CC BY 4.0 and citable via a DOI:
 
-[**View results on Google Drive**](https://drive.google.com/drive/folders/1wRbYo90H6e9iGxK2dmwY1a97YAnGb8OC?usp=share_link)
+[**DysonianLineCNN data + model archive — DOI 10.5281/zenodo.20996506**](https://doi.org/10.5281/zenodo.20996506)
 
-The folder contains per-set subdirectories with:
+The deposit contains, per set:
 
-- **Trained CNN models** (`runs/<stamp>/cnn_model.keras`, `model_meta.json`,
-  `y_min.npy`, `y_max.npy`, `B_axis.csv`)
-- **Parity plots** — true vs. predicted scatter with R² and MAE for each
-  output head (B0, dB, p)
-- **Loss curves** — training/validation loss with zoomed tail
-- **Fit overlays** — per-spectrum PNG comparing experimental (green) and
-  reconstructed (red) curves for each method
-- **Prediction JSONs** — CNN-predicted B0, dB, p for each real spectrum
+- **Trained CNN models** (`set-N/model/cnn_model.keras`, `model_meta.json`,
+  `y_min.npy`, `y_max.npy`, `B_axis.npy`, `B_axis.csv`)
+- **Synthetic training datasets** (`set-N/dataset/X_dyson_mix_dataset.npy`,
+  `y_dyson_mix_dataset.npy`, `B_axis_mix_dataset.npy`, `meta_mix_dataset.json`;
+  N = 10000, Npoints = 4096)
+
+Per-spectrum fit overlays and parity / loss plots are produced locally by the
+pipeline ([`evaluate_run`](dyson_cnn/evaluate.py), [matlab/Validator.m](matlab/Validator.m));
+the head-line `B0` / `ΔB` / `p` numbers for every experimental spectrum are
+committed in `results/set-N/comparison.csv`.
 
 ## Run directory contents
 
