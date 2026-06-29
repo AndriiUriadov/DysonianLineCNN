@@ -37,8 +37,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/uriadov/DysonianLineCNN"
-Documentation = "https://github.com/uriadov/DysonianLineCNN/blob/main/Documentation/"
+Homepage = "https://github.com/AndriiUriadov/DysonianLineCNN"
+Documentation = "https://github.com/AndriiUriadov/DysonianLineCNN/blob/main/README.md"
 
 [tool.setuptools.packages.find]
 include = ["dyson_cnn*"]
