@@ -444,9 +444,9 @@ This repository uses a dual-license model:
 
 - **Source code** (Python, MATLAB, and general config files such as the
   training/inference profiles) — [MIT License](LICENSE)
-- **Research data and documentation** (experimental spectra, trained models,
-  fit results, per-set configs in `config/sets/`, and documentation such as
-  this README) —
+- **Research data and documentation** (synthetic training datasets, trained
+  models, fit results, per-set configs in `config/sets/`, and documentation
+  such as this README) —
   [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
 
 See [LICENSE](LICENSE) for the full text of both licenses.

@@ -56,7 +56,7 @@ Under the following terms:
     license, and indicate if changes were made.
 
 This license applies to:
-  - Experimental EPR spectra (data/)
+  - Synthetic training datasets (archived on Zenodo, DOI 10.5281/zenodo.20996506)
   - Trained CNN models and training artifacts (results/set-N/cnn/runs/)
   - Fit results and comparison tables (results/)
   - Configuration parameters derived from experimental data (config/sets/)
